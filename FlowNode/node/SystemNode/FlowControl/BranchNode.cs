@@ -1,11 +1,11 @@
-﻿using FlowNode1.node;
+﻿using FlowNode.node;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlowNode1
+namespace FlowNode
 {
     [SystemNode("Branch")]
     public class BranchNode : NodeBase

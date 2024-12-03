@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 
-namespace FlowNode1.node
+namespace FlowNode.node
 {
     public class NodeManager : INodeManager
     {
@@ -125,6 +125,17 @@ namespace FlowNode1.node
 
             return false;
         }
+
+        public List<Connector> getConnectors()
+        {
+            return connectors;
+        }
+
+        public List<INode> getNodes()
+        {
+            return nodes;
+        }
+
 
         public void addNode(INode node)
         {

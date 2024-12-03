@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlowNode1.node
+namespace FlowNode.node
 {
     [AttributeUsage(AttributeTargets.Method)]
     public class FunctionAttribute : System.Attribute

@@ -1,11 +1,11 @@
-﻿using FlowNode1.node.Attribute;
+﻿using FlowNode.node.Attribute;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlowNode1.node
+namespace FlowNode.node
 {
     [Node]
     public class MathOperator

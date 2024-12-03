@@ -1,4 +1,4 @@
-﻿using FlowNode1.node.Attribute;
+﻿using FlowNode.node.Attribute;
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -7,7 +7,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlowNode1.node
+namespace FlowNode.node
 {
     public static class NodeFactory
     {

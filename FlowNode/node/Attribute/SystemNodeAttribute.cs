@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlowNode1.node
+namespace FlowNode.node
 {
     [AttributeUsage(AttributeTargets.Class, Inherited = false)]
     public class SystemNodeAttribute : System.Attribute

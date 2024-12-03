@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace FlowNode1.Properties
+namespace FlowNode.Properties
 {
 
 

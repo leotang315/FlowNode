@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlowNode1.node
+namespace FlowNode.node
 {
     public class FunctionNode : NodeBase
     {

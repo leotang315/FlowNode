@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Reflection;
-using FlowNode1.node;
+using FlowNode.node;
 
-namespace FlowNode1
+namespace FlowNode
 {
     public class DataNode : NodeBase
     {
