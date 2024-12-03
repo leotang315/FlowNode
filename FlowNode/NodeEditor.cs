@@ -24,6 +24,7 @@ namespace FlowNode
         private Point connectingEnd;
         private Point panOffset;
         private float zoom = 1.0f;
+        private Pin hoveredPin;
 
         public NodeEditor()
         {
@@ -76,39 +77,39 @@ namespace FlowNode
             }
         }
 
-private void DrawGrid(Graphics g)
-{
-    // 计算可见区域的边界（考虑缩放和平移）
-    var visibleRect = new RectangleF(
-        -panOffset.X / zoom,
-        -panOffset.Y / zoom,
-        Width / zoom,
-        Height / zoom
-    );
-
-    // 网格大小
-    var gridSize = 20;
-
-    // 计算网格起始点（确保网格覆盖整个可见区域）
-    int startX = (int)(Math.Floor(visibleRect.Left / gridSize) * gridSize);
-    int startY = (int)(Math.Floor(visibleRect.Top / gridSize) * gridSize);
-    int endX = (int)(Math.Ceiling(visibleRect.Right / gridSize) * gridSize);
-    int endY = (int)(Math.Ceiling(visibleRect.Bottom / gridSize) * gridSize);
-
-    using (Pen pen = new Pen(Color.FromArgb(60, 60, 60), 1))
-    {
-        // 绘制垂直线
-        for (int x = startX; x <= endX; x += gridSize)
+        private void DrawGrid(Graphics g)
         {
-            g.DrawLine(pen, x, startY, x, endY);
+            // 计算可见区域的边界（考虑缩放和平移）
+            var visibleRect = new RectangleF(
+                -panOffset.X / zoom,
+                -panOffset.Y / zoom,
+                Width / zoom,
+                Height / zoom
+            );
+
+            // 网格大小
+            var gridSize = 20;
+
+            // 计算网格起始点（确保网格覆盖整个可见区域）
+            int startX = (int)(Math.Floor(visibleRect.Left / gridSize) * gridSize);
+            int startY = (int)(Math.Floor(visibleRect.Top / gridSize) * gridSize);
+            int endX = (int)(Math.Ceiling(visibleRect.Right / gridSize) * gridSize);
+            int endY = (int)(Math.Ceiling(visibleRect.Bottom / gridSize) * gridSize);
+
+            using (Pen pen = new Pen(Color.FromArgb(60, 60, 60), 1))
+            {
+                // 绘制垂直线
+                for (int x = startX; x <= endX; x += gridSize)
+                {
+                    g.DrawLine(pen, x, startY, x, endY);
+                }
+                // 绘制水平线
+                for (int y = startY; y <= endY; y += gridSize)
+                {
+                    g.DrawLine(pen, startX, y, endX, y);
+                }
+            }
         }
-        // 绘制水平线
-        for (int y = startY; y <= endY; y += gridSize)
-        {
-            g.DrawLine(pen, startX, y, endX, y);
-        }
-    }
-}
         // private void DrawGrid(Graphics g)
         // {
         //     var gridSize = 20;
@@ -161,6 +162,34 @@ private void DrawGrid(Graphics g)
                 if (nodeView.PinBounds.TryGetValue(pin, out Rectangle pinRect))
                 {
                     Color pinColor = pin.pinType == PinType.Execute ? Color.FromArgb(255, 128, 0) : Color.FromArgb(0, 120, 255);
+
+                    // 判断是否需要高亮显示
+                    bool shouldHighlight = false;
+                    if (isConnecting && selectedPin != null && pin != selectedPin)
+                    {
+                        // 检查连接兼容性
+                        if (selectedPin.direction != pin.direction && // 方向相反
+                            selectedPin.pinType == pin.pinType &&    // 类型相同
+                            ((selectedPin.direction == PinDirection.Output && pin.direction == PinDirection.Input) ||
+                             (selectedPin.direction == PinDirection.Input && pin.direction == PinDirection.Output)))
+                        {
+                            shouldHighlight = true;
+                        }
+                    }
+
+                    // 高亮效果
+                    if (shouldHighlight)
+                    {
+                        // 绘制外发光效果
+                        using (var glowBrush = new SolidBrush(Color.FromArgb(100, pinColor)))
+                        {
+                            var glowRect = pinRect;
+                            glowRect.Inflate(4, 4);
+                            g.FillEllipse(glowBrush, glowRect);
+                        }
+                    }
+
+                    // 绘制引脚
                     using (var brush = new SolidBrush(pinColor))
                     {
                         g.FillEllipse(brush, pinRect);
@@ -208,7 +237,18 @@ private void DrawGrid(Graphics g)
                 Point control1 = new Point(startPoint.X + (int)tangentLength, startPoint.Y);
                 Point control2 = new Point(endPoint.X - (int)tangentLength, endPoint.Y);
 
+                // 绘制连接线
                 g.DrawBezier(pen, startPoint, control1, control2, endPoint);
+
+                // 如果是正在创建的连接线，且类型不匹配，显示错误提示
+                if (isConnecting && !CanConnect(selectedPin, hoveredPin))
+                {
+                    using (var errorPen = new Pen(Color.Red, 2))
+                    {
+                        errorPen.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
+                        g.DrawBezier(errorPen, startPoint, control1, control2, endPoint);
+                    }
+                }
             }
         }
 
@@ -224,8 +264,7 @@ private void DrawGrid(Graphics g)
         {
             base.OnMouseDown(e);
             var mousePos = ScreenToNode(e.Location);
-
-            if (e.Button == MouseButtons.Left)
+  if (e.Button == MouseButtons.Left)
             {
                 var (nodeView, pin) = HitTest(mousePos);
                 selectedNodeView = nodeView;
@@ -258,6 +297,14 @@ private void DrawGrid(Graphics g)
         {
             base.OnMouseMove(e);
             var mousePos = ScreenToNode(e.Location);
+
+            // 更新悬停的引脚
+            var (_, pin) = HitTest(mousePos);
+            if (hoveredPin != pin)
+            {
+                hoveredPin = pin;
+                Invalidate();
+            }
 
             if (isDragging)
             {
@@ -374,6 +421,22 @@ private void DrawGrid(Graphics g)
             {
                 MessageBox.Show($"Execution Error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private bool CanConnect(Pin source, Pin target)
+        {
+            if (source == null || target == null)
+                return false;
+
+            return source.direction != target.direction && // 方向相反
+                   source.pinType == target.pinType &&    // 类型相同
+                   ((source.direction == PinDirection.Output && target.direction == PinDirection.Input) ||
+                    (source.direction == PinDirection.Input && target.direction == PinDirection.Output));
+        }
+
+        internal void RemoveNode(NodeBase node)
+        {
+            throw new NotImplementedException();
         }
     }
 
