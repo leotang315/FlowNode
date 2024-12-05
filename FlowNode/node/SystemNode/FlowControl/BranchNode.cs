@@ -17,6 +17,7 @@ namespace FlowNode
 
         public BranchNode()
         {
+            Name = "Branch";
         }
 
         public override void allocateDefaultPins()

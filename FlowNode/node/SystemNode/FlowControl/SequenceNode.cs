@@ -32,7 +32,7 @@ namespace FlowNode
         public override void allocateDefaultPins()
         {
             pin_input = createPin("Input", PinDirection.Input, new PinType());
-            pin_output = createPin("Output", PinDirection.Input, new PinType());
+            pin_output = createPin("Output", PinDirection.Output, new PinType());
         }
     }
 }

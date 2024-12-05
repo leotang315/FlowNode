@@ -14,6 +14,7 @@ namespace FlowNode.node
         private static readonly Dictionary<string, Type> _nodeTypes = new Dictionary<string, Type>();
         private static readonly Dictionary<string, MethodInfo> _methods = new Dictionary<string, MethodInfo>();
         private static readonly string _customerPath = "/custom/";
+        private static readonly string _systemPath = "/system/";
 
         static NodeFactory()
         {
@@ -25,7 +26,9 @@ namespace FlowNode.node
             foreach (var type in nodeTypes)
             {
                 var attribute = (SystemNodeAttribute)type.GetCustomAttributes(typeof(SystemNodeAttribute), false).First();
-                _nodeTypes[attribute.Path] = type;
+
+                string path = Path.Combine(_systemPath, attribute.Path);
+                _nodeTypes[path] = type;
             }
 
             // 函数节点，使用反射找出具有Node的节点类,并在其内部具有Function属性的函数注册到_methods中
@@ -56,19 +59,19 @@ namespace FlowNode.node
 
         }
 
-        public static List<string> GetNodeTypes()
+        public static List<string> GetNodePath()
         {
             return _nodeTypes.Keys.Concat(_methods.Keys).ToList();
         }
 
-        public static INode CreateNode(string path)
+        public static NodeBase CreateNode(string path)
         {
             // 类节点创建
-            INode node = null;
+            NodeBase node = null;
             Type nodeType;
             if (_nodeTypes.TryGetValue(path, out nodeType))
             {
-                node = (INode)Activator.CreateInstance(nodeType);
+                node = (NodeBase)Activator.CreateInstance(nodeType);
                 node.init();
                 return node;
             }

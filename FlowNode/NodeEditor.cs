@@ -151,7 +151,7 @@ namespace FlowNode
 
             // 绘制标题
             using (var brush = new SolidBrush(Color.White))
-            using (var format = new StringFormat { Alignment = StringAlignment.Near, LineAlignment = StringAlignment.Center })
+            using (var format = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
             {
                 g.DrawString(nodeView.Node.Name, Font, brush, headerRect, format);
             }
@@ -254,17 +254,22 @@ namespace FlowNode
 
         public void AddNode(NodeBase node, Point location)
         {
-            node.init();
+            //node.init();
             nodeManager.addNode(node);
             nodeViews[node] = new NodeView(node, location);
             Invalidate();
+        }
+
+        public void RemoveNode(NodeBase node)
+        {
+            throw new NotImplementedException();
         }
 
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
             var mousePos = ScreenToNode(e.Location);
-  if (e.Button == MouseButtons.Left)
+            if (e.Button == MouseButtons.Left)
             {
                 var (nodeView, pin) = HitTest(mousePos);
                 selectedNodeView = nodeView;
@@ -371,9 +376,9 @@ namespace FlowNode
         {
             float oldZoom = zoom;
             if (e.Delta > 0)
-                zoom = Math.Min(zoom * 1.1f, 2.0f);
+                zoom = Math.Min(zoom * 1.1f, 5.0f);
             else
-                zoom = Math.Max(zoom / 1.1f, 0.5f);
+                zoom = Math.Max(zoom / 1.1f, 0.2f);
 
             // 调整平移以保持鼠标位置不变
             if (oldZoom != zoom)
@@ -385,7 +390,7 @@ namespace FlowNode
             }
         }
 
-        private Point ScreenToNode(Point screenPos)
+        public Point ScreenToNode(Point screenPos)
         {
             return new Point(
                 (int)((screenPos.X - panOffset.X) / zoom),
@@ -434,10 +439,7 @@ namespace FlowNode
                     (source.direction == PinDirection.Input && target.direction == PinDirection.Output));
         }
 
-        internal void RemoveNode(NodeBase node)
-        {
-            throw new NotImplementedException();
-        }
+
     }
 
 
@@ -458,8 +460,13 @@ namespace FlowNode
         public void UpdatePinLocations()
         {
             PinBounds.Clear();
-            var inputPins = Node.Pins.Where(p => p.direction == PinDirection.Input).ToList();
-            var outputPins = Node.Pins.Where(p => p.direction == PinDirection.Output).ToList();
+
+            var inputExecPins = Node.Pins.Where(p => p.direction == PinDirection.Input && p.pinType == PinType.Execute).ToList();
+            var inputDataPins = Node.Pins.Where(p => p.direction == PinDirection.Input && p.pinType == PinType.Data).ToList();
+            var outputExecPins = Node.Pins.Where(p => p.direction == PinDirection.Output && p.pinType == PinType.Execute).ToList();
+            var outputDataPins = Node.Pins.Where(p => p.direction == PinDirection.Output && p.pinType == PinType.Data).ToList();
+            var inputPins = inputExecPins.Concat(inputDataPins).ToList();
+            var outputPins = outputExecPins.Concat(outputDataPins).ToList();
 
             // 布局输入引脚
             for (int i = 0; i < inputPins.Count; i++)

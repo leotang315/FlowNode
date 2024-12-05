@@ -10,7 +10,7 @@ namespace FlowNode.node.Attribute
     class NodeAttribute: System.Attribute
     {
         public string Path { get; }
-        public NodeAttribute(string path="/custom/")
+        public NodeAttribute(string path="222")
         {
             Path = path;
         }
