@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 namespace FlowNode.node.Attribute
 {
     [AttributeUsage(AttributeTargets.Class, Inherited = false)]
-    class NodeAttribute: System.Attribute
+    public class NodeAttribute : System.Attribute
     {
         public string Path { get; }
-        public NodeAttribute(string path="222")
+        public NodeAttribute(string path = "222")
         {
             Path = path;
         }

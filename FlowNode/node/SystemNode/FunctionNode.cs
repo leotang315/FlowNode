@@ -21,8 +21,12 @@ namespace FlowNode.node
         }
         public override void allocateDefaultPins()
         {
-            pin_input = createPin("Input", PinDirection.Input, new PinType());
-            pin_output = createPin("Output", PinDirection.Output, new PinType());
+            if (!isAutoRun())
+            {
+                pin_input = createPin("Input", PinDirection.Input, new PinType());
+                pin_output = createPin("Output", PinDirection.Output, new PinType());
+            }
+            
 
             var parameters = method.GetParameters().ToList();
             foreach (var param in parameters)
@@ -43,8 +47,12 @@ namespace FlowNode.node
                     Pins[i].data = parameters[i];
                 }
             }
-            // 将下一个节点推入执行堆栈
-            manager.pushNextConnectNode(pin_output);
+
+            if (!isAutoRun())
+            {
+                // 将下一个节点推入执行堆栈
+                manager.pushNextConnectNode(pin_output);
+            }
         }
     }
 }

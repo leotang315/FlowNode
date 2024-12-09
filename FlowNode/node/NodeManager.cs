@@ -160,10 +160,10 @@ namespace FlowNode.node
                 throw new InvalidOperationException("连接器数据引脚和执行引脚不能相连");
             }
 
-            if (!ValidatePinDataType(src.dataType, dst.dataType))
-            {
-                throw new InvalidOperationException($"数据类型不兼容：源引脚类型为 {src.dataType}, 目标引脚类型为 {dst.dataType}");
-            }
+            //if (!ValidatePinDataType(src.dataType, dst.dataType))
+            //{
+            //    throw new InvalidOperationException($"数据类型不兼容：源引脚类型为 {src.dataType}, 目标引脚类型为 {dst.dataType}");
+            //}
 
 
             var connection = new Connector { src = src, dst = dst };

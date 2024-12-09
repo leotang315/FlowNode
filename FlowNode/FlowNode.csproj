@@ -50,6 +50,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="app\command\AddNodeCommand.cs" />
+    <Compile Include="app\node\IntTest.cs" />
     <Compile Include="app\view\Form2.cs">
       <SubType>Form</SubType>
     </Compile>

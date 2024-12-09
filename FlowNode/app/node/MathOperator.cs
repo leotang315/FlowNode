@@ -11,13 +11,13 @@ namespace FlowNode.node
     public class MathOperator
     {
         [Function("", true)]
-        public void add(int a, int b, out int result)
+        public static void add(int a, int b, out int result)
         {
             result = a + b;
         }
 
         [Function("", true)]
-        public void sub(int a, int b, out int result)
+        public static void sub(int a, int b, out int result)
         {
             result = a - b;
         }

@@ -20,6 +20,13 @@ namespace FlowNode
         {
             InitializeComponent();
 
+
+            ToolStrip toolStrip = new ToolStrip();
+            toolStrip.Items.Add("Execute").Click += (s, e) =>
+            {
+                nodeEditor.ExecuteFlow();
+            };
+            this.Controls.Add(toolStrip);
             InitializeNodeTreeView();
 
             InitializeNodeEditor();           

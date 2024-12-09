@@ -8,6 +8,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static FlowNode.Form2;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace FlowNode
 {
@@ -32,6 +34,12 @@ namespace FlowNode
             SetStyle(ControlStyles.AllPaintingInWmPaint |
                     ControlStyles.OptimizedDoubleBuffer |
                     ControlStyles.UserPaint, true);
+
+
+
+        
+   
+
 
             nodeManager = new NodeManager();
             nodeViews = new Dictionary<INode, NodeView>();
