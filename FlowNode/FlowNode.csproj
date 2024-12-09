@@ -49,24 +49,25 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Form2.cs">
+    <Compile Include="app\command\AddNodeCommand.cs" />
+    <Compile Include="app\view\Form2.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Form2.Designer.cs">
+    <Compile Include="app\view\Form2.Designer.cs">
       <DependentUpon>Form2.cs</DependentUpon>
     </Compile>
-    <Compile Include="ICommand.cs" />
-    <Compile Include="NodeEditor.cs">
+    <Compile Include="app\command\ICommand.cs" />
+    <Compile Include="app\view\NodeEditor.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="NodeEditor.Designer.cs">
+    <Compile Include="app\view\NodeEditor.Designer.cs">
       <DependentUpon>NodeEditor.cs</DependentUpon>
     </Compile>
     <Compile Include="NodeSearchMenu.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="node\Attribute\NodeAttribute.cs" />
-    <Compile Include="MathOperator.cs" />
+    <Compile Include="app\node\MathOperator.cs" />
     <Compile Include="node\Connector.cs" />
     <Compile Include="node\INode.cs" />
     <Compile Include="node\INodeManager.cs" />
@@ -108,5 +109,6 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

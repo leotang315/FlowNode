@@ -39,6 +39,16 @@ namespace FlowNode
 
             // 启用鼠标滚轮
             this.MouseWheel += NodeEditor_MouseWheel;
+            this.KeyDown += NodeEditor_KeyDown;
+        }
+
+        private void NodeEditor_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Delete && selectedNodeView != null)
+            {
+                RemoveNode(selectedNodeView.Node);
+                selectedNodeView = null;
+            }
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -262,7 +272,21 @@ namespace FlowNode
 
         public void RemoveNode(NodeBase node)
         {
-            throw new NotImplementedException();
+            // 删除所有与该节点相关的连接
+            var connectorsToRemove = nodeManager.getConnectors()
+                .Where(c => c.src.host == node || c.dst.host == node)
+                .ToList();
+
+            foreach (var connector in connectorsToRemove)
+            {
+                nodeManager.removeConnector(connector);
+            }
+
+            // 从节点管理器和视图中移除节点
+            nodeManager.removeNode(node);
+            nodeViews.Remove(node);
+
+            Invalidate();
         }
 
         protected override void OnMouseDown(MouseEventArgs e)
@@ -367,7 +391,7 @@ namespace FlowNode
 
             isDragging = false;
             isConnecting = false;
-            selectedNodeView = null;
+
             selectedPin = null;
             Invalidate();
         }
