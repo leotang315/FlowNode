@@ -72,6 +72,8 @@ namespace FlowNode.node
             if (_nodeTypes.TryGetValue(path, out nodeType))
             {
                 node = (NodeBase)Activator.CreateInstance(nodeType);
+                var name = Path.GetFileName(path);
+                node.Name = name;
                 node.init();
                 return node;
             }
@@ -81,6 +83,8 @@ namespace FlowNode.node
             if (_methods.TryGetValue(path, out method))
             {
                 node = new FunctionNode(null, method);
+                var name = Path.GetFileName(path);
+                node.Name = name;
                 node.init();
                 return node;
             }
