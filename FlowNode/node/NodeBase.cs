@@ -6,11 +6,14 @@ using System.Threading.Tasks;
 
 namespace FlowNode.node
 {
- 
+
 
     public abstract class NodeBase : INode
     {
         public string Name { get; set; }
+
+
+
         public List<Pin> Pins = new List<Pin>();
         public bool isAuto = false;
 
@@ -33,7 +36,10 @@ namespace FlowNode.node
         {
 
         }
-
+        List<Pin> INode.Pins
+        {
+            get { return Pins; }
+        }
         public void run(INodeManager manager)
         {
             // 执行当前节点的逻辑
@@ -112,7 +118,7 @@ namespace FlowNode.node
             return null;
         }
 
-    
+
     }
 
 }

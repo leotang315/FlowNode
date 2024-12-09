@@ -197,16 +197,72 @@ namespace FlowNode.node
             executionStack.Push(node);
         }
 
+        /// <summary>
+        /// 查找入口节点（没有输入执行引脚连接的节点）
+        /// </summary>
+        private List<INode> FindEntryNodes()
+        {
+            var entryNodes = new List<INode>();
+            foreach (var node in nodes)
+            {
+                bool hasInputExecution = false;
+                foreach (var pin in node.Pins)
+                {
+                    if (pin.direction == PinDirection.Input && pin.pinType == PinType.Execute)
+                    {
+                        // 检查这个输入执行引脚是否有连接
+                        if (connectors.Any(c => c.dst == pin))
+                        {
+                            hasInputExecution = true;
+                            break;
+                        }
+                    }
+                }
+
+                // 如果节点没有输入执行引脚的连接，它就是入口节点
+                if (!hasInputExecution)
+                {
+                    entryNodes.Add(node);
+                }
+            }
+            return entryNodes;
+        }
+
         public void run()
         {
-            // 将所有根节点（没有输入依赖的节点）推入执行堆栈
-            executionStack.Push(nodes[0]);
-
-            // 依次从堆栈中取出节点并执行
-            while (executionStack.Count > 0)
+            try
             {
-                var node = executionStack.Pop();
-                node.run(this);
+                // 清空执行堆栈
+                executionStack.Clear();
+
+                // 找到所有入口节点
+                var entryNodes = FindEntryNodes();
+                if (entryNodes.Count == 0)
+                {
+                    throw new InvalidOperationException("No entry nodes found in the graph");
+                }
+
+                // 将入口节点按照添加顺序推入堆栈（后添加的先执行）
+                foreach (var node in entryNodes.AsEnumerable().Reverse())
+                {
+                    executionStack.Push(node);
+                }
+
+                //// 将所有根节点（没有输入依赖的节点）推入执行堆栈
+                //executionStack.Push(nodes[0]);
+
+                // 依次从堆栈中取出节点并执行
+                while (executionStack.Count > 0)
+                {
+                    var node = executionStack.Pop();
+                    node.run(this);
+                }
+            }
+            catch (Exception ex)
+            {
+                // 清空执行堆栈
+                executionStack.Clear();
+                throw new InvalidOperationException($"Flow execution error: {ex.Message}", ex);
             }
         }
     }

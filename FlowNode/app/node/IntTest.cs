@@ -24,9 +24,9 @@ namespace FlowNode.app.node
         }
 
         [Function("", false)]
-        public static void showMessage(string message)
+        public static void showMessage(int message)
         {
-           Console.WriteLine(message);
+           Console.WriteLine(message.ToString());
         }
     }
 }

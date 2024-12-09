@@ -11,6 +11,7 @@ namespace FlowNode.node
         bool isAutoRun();
         void init();
         void clearup();
+        List<Pin> Pins { get; }
         void run(INodeManager manager);
     }
 }
