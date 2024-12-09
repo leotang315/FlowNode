@@ -82,7 +82,7 @@ namespace FlowNode.node
         /// <summary>
         /// 检查有没有循环依赖
         /// </summary>
-        /// <param name="src">添加连接的源节点</param>
+        /// <param name="src">添加��接的源节点</param>
         /// <param name="dst">添加连接的目标节点</param>
         /// <returns></returns>
         private bool ValidateCycleDependency(INode src, INode dst)
@@ -205,6 +205,13 @@ namespace FlowNode.node
             var entryNodes = new List<INode>();
             foreach (var node in nodes)
             {
+                // 首先检查节点是否有执行类型的引脚
+                bool hasExecutePin = node.Pins.Any(p => p.pinType == PinType.Execute);
+                if (!hasExecutePin)
+                {
+                    continue; // 跳过没有执行类型引脚的节点
+                }
+
                 bool hasInputExecution = false;
                 foreach (var pin in node.Pins)
                 {

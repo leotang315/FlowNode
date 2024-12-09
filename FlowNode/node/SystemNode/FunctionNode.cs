@@ -26,7 +26,7 @@ namespace FlowNode.node
                 pin_input = createPin("Input", PinDirection.Input, new PinType());
                 pin_output = createPin("Output", PinDirection.Output, new PinType());
             }
-            
+
 
             var parameters = method.GetParameters().ToList();
             foreach (var param in parameters)
@@ -37,14 +37,19 @@ namespace FlowNode.node
 
         public override void excute(INodeManager manager)
         {
-            var parameters = Pins.Select(p => p.data).ToArray();
+            var dataPins = Pins.Where(p => p.pinType == PinType.Data).ToList();
+
+            // 只选择数据类型的Pin
+            var parameters = dataPins.Select(p => p.data).ToArray();
             method.Invoke(self, parameters);
+
+            // 更新输出参数
 
             for (int i = 0; i < parameters.Length; i++)
             {
-                if (Pins[i].direction == PinDirection.Output)
+                if (dataPins[i].direction == PinDirection.Output)
                 {
-                    Pins[i].data = parameters[i];
+                    dataPins[i].data = parameters[i];
                 }
             }
 
