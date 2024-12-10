@@ -27,6 +27,7 @@ namespace FlowNode
         private Point panOffset;
         private float zoom = 1.0f;
         private Pin hoveredPin;
+        private Connector selectedConnector;
 
         public NodeEditor()
         {
@@ -264,14 +265,23 @@ namespace FlowNode
             Color lineColor = connector.src.pinType == PinType.Execute ?
                 Color.FromArgb(255, 128, 0) : Color.FromArgb(0, 120, 255);
 
-            using (Pen pen = new Pen(lineColor, 2))
-            {
-                // 计算贝塞尔曲线的控制点
-                float tangentLength = Math.Min(100, Math.Abs(endPoint.X - startPoint.X) * 0.5f);
-                Point control1 = new Point(startPoint.X + (int)tangentLength, startPoint.Y);
-                Point control2 = new Point(endPoint.X - (int)tangentLength, endPoint.Y);
+            // 计算贝塞尔曲线的控制点
+            float tangentLength = Math.Min(100, Math.Abs(endPoint.X - startPoint.X) * 0.5f);
+            Point control1 = new Point(startPoint.X + (int)tangentLength, startPoint.Y);
+            Point control2 = new Point(endPoint.X - (int)tangentLength, endPoint.Y);
 
-                // 绘制连接线
+            // 如果是选中的连接器，先绘制发光效果
+            if (selectedConnector == connector)
+            {
+                using (var glowPen = new Pen(Color.FromArgb(100, lineColor), 6))
+                {
+                    g.DrawBezier(glowPen, startPoint, control1, control2, endPoint);
+                }
+            }
+
+            // 绘制主连接线
+            using (Pen pen = new Pen(lineColor, selectedConnector == connector ? 3 : 2))
+            {
                 g.DrawBezier(pen, startPoint, control1, control2, endPoint);
 
                 // 如果是正在创建的连接线，且类型不匹配，显示错误提示
@@ -317,11 +327,13 @@ namespace FlowNode
         {
             base.OnMouseDown(e);
             var mousePos = ScreenToNode(e.Location);
+            
             if (e.Button == MouseButtons.Left)
             {
-                var (nodeView, pin) = HitTest(mousePos);
+                var (nodeView, pin, connector) = HitTest(mousePos);
                 selectedNodeView = nodeView;
                 selectedPin = pin;
+                selectedConnector = connector;
 
                 if (selectedPin != null)
                 {
@@ -339,6 +351,13 @@ namespace FlowNode
                     dragStart = mousePos;
                 }
             }
+            else if (e.Button == MouseButtons.Right && selectedConnector != null)
+            {
+                // 右键点击连接器时删除它
+                nodeManager.removeConnector(selectedConnector);
+                selectedConnector = null;
+                Invalidate();
+            }
             else if (e.Button == MouseButtons.Middle)
             {
                 isDragging = true;
@@ -352,7 +371,7 @@ namespace FlowNode
             var mousePos = ScreenToNode(e.Location);
 
             // 更新悬停的引脚
-            var (_, pin) = HitTest(mousePos);
+            var (_, pin,_) = HitTest(mousePos);
             if (hoveredPin != pin)
             {
                 hoveredPin = pin;
@@ -396,7 +415,7 @@ namespace FlowNode
 
             if (isConnecting)
             {
-                var (nodeView, pin) = HitTest(mousePos);
+                var (nodeView, pin,_) = HitTest(mousePos);
                 if (pin != null && selectedPin != null)
                 {
                     try
@@ -446,22 +465,114 @@ namespace FlowNode
             );
         }
 
-        private (NodeView nodeView, Pin pin) HitTest(Point location)
+        private (NodeView nodeView, Pin pin, Connector connector) HitTest(Point location)
         {
+ 
+
+            // 检查节点和引脚
             foreach (var nodeView in nodeViews.Values)
             {
                 // 检查是否点击了引脚
                 foreach (var pinPair in nodeView.PinBounds)
                 {
                     if (pinPair.Value.Contains(location))
-                        return (nodeView, pinPair.Key);
+                        return (nodeView, pinPair.Key, null);
                 }
 
                 // 检查是否点击了节点本身
                 if (nodeView.Bounds.Contains(location))
-                    return (nodeView, null);
+                    return (nodeView, null, null);
             }
-            return (null, null);
+
+            // 检查是否点击了连接器
+            foreach (var connector in nodeManager.getConnectors())
+            {
+                if (IsPointOnConnector(location, connector))
+                {
+                    return (null, null, connector);
+                }
+            }
+            return (null, null, null);
+        }
+
+        private bool IsPointOnConnector(Point point, Connector connector)
+        {
+            if (!nodeViews.TryGetValue(connector.src.host, out NodeView srcView) ||
+                !nodeViews.TryGetValue(connector.dst.host, out NodeView dstView))
+                return false;
+
+            if (!srcView.PinBounds.TryGetValue(connector.src, out Rectangle srcPinRect) ||
+                !dstView.PinBounds.TryGetValue(connector.dst, out Rectangle dstPinRect))
+                return false;
+
+            Point startPoint = new Point(srcPinRect.Right, srcPinRect.Top + srcPinRect.Height / 2);
+            Point endPoint = new Point(dstPinRect.Left, dstPinRect.Top + dstPinRect.Height / 2);
+
+            // 计算贝塞尔曲线的控制点
+            float tangentLength = Math.Min(100, Math.Abs(endPoint.X - startPoint.X) * 0.5f);
+            Point control1 = new Point(startPoint.X + (int)tangentLength, startPoint.Y);
+            Point control2 = new Point(endPoint.X - (int)tangentLength, endPoint.Y);
+
+            // 检查点到曲线的距离
+            return IsPointNearBezier(point, startPoint, control1, control2, endPoint, 5);
+        }
+
+        private bool IsPointNearBezier(Point point, Point start, Point control1, Point control2, Point end, float threshold)
+        {
+            // 简化的距离检查：将曲线分成多个线段进行检查
+            const int segments = 20;
+            Point prev = start;
+
+            for (int i = 1; i <= segments; i++)
+            {
+                float t = i / (float)segments;
+                Point current = CalculateBezierPoint(t, start, control1, control2, end);
+                
+                // 检查点到线段的距离
+                if (DistanceToLineSegment(point, prev, current) <= threshold)
+                    return true;
+
+                prev = current;
+            }
+            return false;
+        }
+
+        private Point CalculateBezierPoint(float t, Point start, Point control1, Point control2, Point end)
+        {
+            float u = 1 - t;
+            float tt = t * t;
+            float uu = u * u;
+            float uuu = uu * u;
+            float ttt = tt * t;
+
+            float x = uuu * start.X +
+                     3 * uu * t * control1.X +
+                     3 * u * tt * control2.X +
+                     ttt * end.X;
+
+            float y = uuu * start.Y +
+                     3 * uu * t * control1.Y +
+                     3 * u * tt * control2.Y +
+                     ttt * end.Y;
+
+            return new Point((int)x, (int)y);
+        }
+
+        private float DistanceToLineSegment(Point point, Point lineStart, Point lineEnd)
+        {
+            float dx = lineEnd.X - lineStart.X;
+            float dy = lineEnd.Y - lineStart.Y;
+            
+            if (dx == 0 && dy == 0)
+                return (float)Math.Sqrt(Math.Pow(point.X - lineStart.X, 2) + Math.Pow(point.Y - lineStart.Y, 2));
+
+            float t = ((point.X - lineStart.X) * dx + (point.Y - lineStart.Y) * dy) / (dx * dx + dy * dy);
+            t = Math.Max(0, Math.Min(1, t));
+
+            float projX = lineStart.X + t * dx;
+            float projY = lineStart.Y + t * dy;
+
+            return (float)Math.Sqrt(Math.Pow(point.X - projX, 2) + Math.Pow(point.Y - projY, 2));
         }
 
         public void ExecuteFlow()
