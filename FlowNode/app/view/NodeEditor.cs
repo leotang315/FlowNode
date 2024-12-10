@@ -161,10 +161,26 @@ namespace FlowNode
                 g.FillRectangle(brush, headerRect);
             }
 
-            // 绘制边框
-            using (var pen = new Pen(Color.FromArgb(100, 100, 100), 1))
+            // 绘制边框 - 根据是否选中使用不同的颜色和粗细
+            if (selectedNodeView == nodeView)
             {
-                g.DrawRectangle(pen, rect);
+                // 选中状态 - 使用亮色边框和更粗的线条
+                using (var pen = new Pen(Color.FromArgb(0, 120, 215), 2))
+                {
+                    // 绘制带圆角的矩形
+                    using (var path = CreateRoundedRectangle(rect, 3))
+                    {
+                        g.DrawPath(pen, path);
+                    }
+                }
+            }
+            else
+            {
+                // 未选中状态 - 使用普通边框
+                using (var pen = new Pen(Color.FromArgb(100, 100, 100), 1))
+                {
+                    g.DrawRectangle(pen, rect);
+                }
             }
 
             // 绘制标题
@@ -471,7 +487,23 @@ namespace FlowNode
                     (source.direction == PinDirection.Input && target.direction == PinDirection.Output));
         }
 
-
+        // 添加一个辅助方法来创建圆角矩形
+        private System.Drawing.Drawing2D.GraphicsPath CreateRoundedRectangle(Rectangle bounds, int radius)
+        {
+            var path = new System.Drawing.Drawing2D.GraphicsPath();
+            
+            // 左上角
+            path.AddArc(bounds.X, bounds.Y, radius * 2, radius * 2, 180, 90);
+            // 右上角
+            path.AddArc(bounds.Right - radius * 2, bounds.Y, radius * 2, radius * 2, 270, 90);
+            // 右下角
+            path.AddArc(bounds.Right - radius * 2, bounds.Bottom - radius * 2, radius * 2, radius * 2, 0, 90);
+            // 左下角
+            path.AddArc(bounds.X, bounds.Bottom - radius * 2, radius * 2, radius * 2, 90, 90);
+            
+            path.CloseFigure();
+            return path;
+        }
     }
 
 
