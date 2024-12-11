@@ -60,4 +60,35 @@ namespace FlowNode.node
         }
 
     }
+
+    public static class PinTypeValidator
+    {
+        public static bool AreTypesCompatible(Type sourceType, Type targetType)
+        {
+            // 处理空值
+            if (sourceType == null || targetType == null)
+                return false;
+
+            // 处理引用类型参数(ref/out)
+            Type srcBaseType = sourceType.IsByRef ? sourceType.GetElementType() : sourceType;
+            Type dstBaseType = targetType.IsByRef ? targetType.GetElementType() : targetType;
+
+            // 检查直接兼容性
+            if (dstBaseType == srcBaseType || dstBaseType.IsAssignableFrom(srcBaseType))
+                return true;
+
+            //// 检查运行时转换兼容性
+            //try
+            //{
+            //    var testValue = Activator.CreateInstance(srcBaseType);
+            //    Convert.ChangeType(testValue, dstBaseType);
+            //    return true;
+            //}
+            //catch
+            //{
+            //    return false;
+            //}
+            return false;
+        }
+    }
 }

@@ -82,11 +82,7 @@ namespace FlowNode
             // 绘制正在创建的连接线
             if (isConnecting)
             {
-                using (Pen pen = new Pen(Color.White, 2))
-                {
-                    pen.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
-                    g.DrawLine(pen, connectingStart, connectingEnd);
-                }
+                DrawConnectingLine(g);
             }
 
             // 绘制节点
@@ -129,21 +125,6 @@ namespace FlowNode
                 }
             }
         }
-        // private void DrawGrid(Graphics g)
-        // {
-        //     var gridSize = 20;
-        //     using (Pen pen = new Pen(Color.FromArgb(60, 60, 60), 1))
-        //     {
-        //         for (int x = 0; x < Width; x += gridSize)
-        //         {
-        //             g.DrawLine(pen, x, 0, x, Height);
-        //         }
-        //         for (int y = 0; y < Height; y += gridSize)
-        //         {
-        //             g.DrawLine(pen, 0, y, Width, y);
-        //         }
-        //     }
-        // }
 
         private void DrawNode(Graphics g, NodeView nodeView)
         {
@@ -162,7 +143,7 @@ namespace FlowNode
                 g.FillRectangle(brush, headerRect);
             }
 
-            // 绘制边框 - 根据是否选中使用不同的颜色和粗细
+            // 绘制边框 - 根据是否选中使用不同的��色和粗细
             if (selectedNodeView == nodeView)
             {
                 // 选中状态 - 使用亮色边框和更粗的线条
@@ -283,22 +264,11 @@ namespace FlowNode
             using (Pen pen = new Pen(lineColor, selectedConnector == connector ? 3 : 2))
             {
                 g.DrawBezier(pen, startPoint, control1, control2, endPoint);
-
-                // 如果是正在创建的连接线，且类型不匹配，显示错误提示
-                if (isConnecting && !CanConnect(selectedPin, hoveredPin))
-                {
-                    using (var errorPen = new Pen(Color.Red, 2))
-                    {
-                        errorPen.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
-                        g.DrawBezier(errorPen, startPoint, control1, control2, endPoint);
-                    }
-                }
             }
         }
 
         public void AddNode(NodeBase node, Point location)
         {
-            //node.init();
             nodeManager.addNode(node);
             nodeViews[node] = new NodeView(node, location);
             Invalidate();
@@ -592,10 +562,29 @@ namespace FlowNode
             if (source == null || target == null)
                 return false;
 
-            return source.direction != target.direction && // 方向相反
-                   source.pinType == target.pinType &&    // 类型相同
-                   ((source.direction == PinDirection.Output && target.direction == PinDirection.Input) ||
-                    (source.direction == PinDirection.Input && target.direction == PinDirection.Output));
+            // 检查方向和引脚类型
+            bool basicCheck = source.direction != target.direction && // 方向相反
+                             source.pinType == target.pinType;    // 类型相同
+
+            if (!basicCheck) return false;
+
+            // 如果是执行类型的引脚，不需要检查数据类型
+            if (source.pinType == PinType.Execute)
+                return true;
+
+            // 确保source是输出引脚，target是输入引脚
+            Pin outputPin, inputPin;
+            if (source.direction == PinDirection.Output)
+            {
+                outputPin = source;
+                inputPin = target;
+            }
+            else
+            {
+                outputPin = target;
+                inputPin = source;
+            }
+            return PinTypeValidator.AreTypesCompatible(outputPin.dataType, inputPin.dataType);
         }
 
         // 添加一个辅助方法来创建圆角矩形
@@ -614,6 +603,56 @@ namespace FlowNode
             
             path.CloseFigure();
             return path;
+        }
+
+        // 添加新方法来绘制正在创建的连接线
+        private void DrawConnectingLine(Graphics g)
+        {
+            // 如果没有悬停的引脚，使用鼠标位置作为终点
+            Point endPoint = hoveredPin != null ? 
+                GetPinConnectionPoint(hoveredPin) : connectingEnd;
+
+            // 计算贝塞尔曲线的控制点
+            float tangentLength = Math.Min(100, Math.Abs(endPoint.X - connectingStart.X) * 0.5f);
+            Point control1 = new Point(connectingStart.X + (int)tangentLength, connectingStart.Y);
+            Point control2 = new Point(endPoint.X - (int)tangentLength, endPoint.Y);
+
+            // 检查连接兼容性
+            bool isCompatible = hoveredPin != null && CanConnect(selectedPin, hoveredPin);
+
+            // 根据兼容性选择颜色和样式
+            if (hoveredPin != null && !isCompatible)
+            {
+                // 不兼容的连接显示为红色虚线
+                using (var pen = new Pen(Color.Red, 2))
+                {
+                    pen.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
+                    g.DrawBezier(pen, connectingStart, control1, control2, endPoint);
+                }
+            }
+            else
+            {
+                // 正常连接显示为白色
+                using (var pen = new Pen(Color.White, 2))
+                {
+                    pen.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
+                    g.DrawBezier(pen, connectingStart, control1, control2, endPoint);
+                }
+            }
+        }
+
+        // 添加辅助方法来获取引脚的连接点
+        private Point GetPinConnectionPoint(Pin pin)
+        {
+            if (nodeViews.TryGetValue(pin.host, out NodeView nodeView) && 
+                nodeView.PinBounds.TryGetValue(pin, out Rectangle pinRect))
+            {
+                return new Point(
+                    pin.direction == PinDirection.Input ? pinRect.Left : pinRect.Right,
+                    pinRect.Top + pinRect.Height / 2
+                );
+            }
+            return Point.Empty;
         }
     }
 

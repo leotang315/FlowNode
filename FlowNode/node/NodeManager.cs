@@ -52,37 +52,13 @@ namespace FlowNode.node
         /// <returns></returns>
         private bool ValidatePinDataType(Type srcDataType, Type dstDataType)
         {
-
-            // 如果类型完全匹配，直接赋值
-            if (dstDataType == srcDataType)
-            {
-                return true;
-
-            }
-
-            // 如果目标类型是源类型的父类型或相同类型，则兼容
-            if (dstDataType.IsAssignableFrom(srcDataType))
-            {
-                return true;
-            }
-
-            // 如果可以进行安全的类型转换，也认为是兼容的
-            try
-            {
-                var testValue = Activator.CreateInstance(srcDataType);
-                Convert.ChangeType(testValue, dstDataType);
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            return PinTypeValidator.AreTypesCompatible(srcDataType, dstDataType);
         }
 
         /// <summary>
         /// 检查有没有循环依赖
         /// </summary>
-        /// <param name="src">添加��接的源节点</param>
+        /// <param name="src">添加连接的源节点</param>
         /// <param name="dst">添加连接的目标节点</param>
         /// <returns></returns>
         private bool ValidateCycleDependency(INode src, INode dst)
@@ -103,7 +79,7 @@ namespace FlowNode.node
         {
             if (current == target)
             {
-                return true; // 找到路径，形成环
+                return true; // 找到路径，���成环
             }
 
             if (visited.Contains(current))
@@ -160,10 +136,10 @@ namespace FlowNode.node
                 throw new InvalidOperationException("连接器数据引脚和执行引脚不能相连");
             }
 
-            //if (!ValidatePinDataType(src.dataType, dst.dataType))
-            //{
-            //    throw new InvalidOperationException($"数据类型不兼容：源引脚类型为 {src.dataType}, 目标引脚类型为 {dst.dataType}");
-            //}
+            if (!ValidatePinDataType(src.dataType, dst.dataType))
+            {
+                throw new InvalidOperationException($"数据类型不兼容：源引脚类型为 {src.dataType}, 目标引脚类型为 {dst.dataType}");
+            }
 
 
             var connection = new Connector { src = src, dst = dst };
