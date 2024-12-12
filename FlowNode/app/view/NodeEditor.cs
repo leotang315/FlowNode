@@ -11,6 +11,7 @@ using System.Windows.Forms;
 using static FlowNode.Form2;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using FlowNode.app.command;
+using FlowNode.app.serialization;
 
 namespace FlowNode
 {
@@ -31,6 +32,7 @@ namespace FlowNode
         private Connector selectedConnector;
         private CommandManager commandManager = new CommandManager();
         private Point dragStartLocation; // 用于存储拖动开始时的节点位置
+        private NodeSerializationService serializationService;
 
         // 添加属性以允许外部访问 NodeManager
         public NodeManager NodeManager => nodeManager;
@@ -49,6 +51,7 @@ namespace FlowNode
             // 启用鼠标滚轮
             this.MouseWheel += NodeEditor_MouseWheel;
             this.KeyDown += NodeEditor_KeyDown;
+            serializationService = new NodeSerializationService(nodeManager, nodeViews);
         }
 
         private void NodeEditor_KeyDown(object sender, KeyEventArgs e)
@@ -715,6 +718,31 @@ namespace FlowNode
         {
             commandManager.Redo();
             Invalidate();
+        }
+
+        public void SaveToFile(string filePath)
+        {
+            try
+            {
+                serializationService.SaveToFile(filePath);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"保存失败: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        public void LoadFromFile(string filePath)
+        {
+            try
+            {
+                serializationService.LoadFromFile(filePath);
+                Invalidate();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"加载失败: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 

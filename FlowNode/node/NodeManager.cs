@@ -13,6 +13,129 @@ namespace FlowNode.node
         private List<Connector> connectors = new List<Connector>();
         private Stack<INode> executionStack = new Stack<INode>();
 
+
+
+        public List<Connector> getConnectors()
+        {
+            return connectors;
+        }
+
+        public List<INode> getNodes()
+        {
+            return nodes;
+        }
+
+
+        public void addNode(INode node)
+        {
+            nodes.Add(node);
+        }
+
+        public void removeNode(INode node)
+        {
+            nodes.Remove(node);
+        }
+
+        public void addConnector(Pin src, Pin dst)
+        {
+
+            if (!ValidatePinDirection(src, dst))
+            {
+                throw new InvalidOperationException("连接器只能从输出引脚连接到输入引脚");
+            }
+
+            if (!ValidatePinType(src, dst))
+            {
+                throw new InvalidOperationException("连接器数据引脚和执行引脚不能相连");
+            }
+            if (src.pinType== PinType.Data)
+            {
+                if (!ValidatePinDataType(src.dataType, dst.dataType))
+                {
+                    throw new InvalidOperationException($"数据类型不兼容：源引脚类型为 {src.dataType}, 目标引脚类型为 {dst.dataType}");
+                }
+            }
+            var connection = new Connector { src = src, dst = dst };
+            connectors.Add(connection);
+        }
+
+        public void removeConnector(Connector connector)
+        {
+            connectors.Remove(connector);
+        }
+
+        public void clear()
+        {
+            nodes.Clear();
+            connectors.Clear();
+            executionStack.Clear();
+        }
+
+        public Connector findConnector(Pin pin)
+        {
+            var connector = connectors.FirstOrDefault(c => c.dst == pin);
+            return connector;
+        }
+
+        public void pushNextConnectNode(Pin pin)
+        {
+            var connector = connectors.FirstOrDefault(c => c.src == pin);
+
+            if (connector != null)
+            {
+                pushNextNode(connector.dst.host);
+
+            }
+        }
+
+        public void pushNextNode(INode node)
+        {
+            executionStack.Push(node);
+        }
+
+        public void run()
+        {
+            try
+            {
+                // 清空执行堆栈
+                executionStack.Clear();
+
+                // 找到所有入口节点
+                var entryNodes = FindEntryNodes();
+                if (entryNodes.Count == 0)
+                {
+                    throw new InvalidOperationException("No entry nodes found in the graph");
+                }
+
+                // 将入口节点按照添加顺序推入堆栈（后添加的先执行）
+                foreach (var node in entryNodes.AsEnumerable().Reverse())
+                {
+                    executionStack.Push(node);
+                }
+
+                //// 将所有根节点（没有输入依赖的节点）推入执行堆栈
+                //executionStack.Push(nodes[0]);
+
+                // 依次从堆栈中取出节点并执行
+                while (executionStack.Count > 0)
+                {
+                    var node = executionStack.Pop();
+                    node.run(this);
+                }
+            }
+            catch (Exception ex)
+            {
+                // 清空执行堆栈
+                executionStack.Clear();
+                throw new InvalidOperationException($"Flow execution error: {ex.Message}", ex);
+            }
+        }
+
+
+
+
+
+
         /// <summary>
         /// 检查引脚方向
         /// </summary>
@@ -102,77 +225,6 @@ namespace FlowNode.node
             return false;
         }
 
-        public List<Connector> getConnectors()
-        {
-            return connectors;
-        }
-
-        public List<INode> getNodes()
-        {
-            return nodes;
-        }
-
-
-        public void addNode(INode node)
-        {
-            nodes.Add(node);
-        }
-
-        public void removeNode(INode node)
-        {
-            nodes.Remove(node);
-        }
-
-        public void addConnector(Pin src, Pin dst)
-        {
-
-            if (!ValidatePinDirection(src, dst))
-            {
-                throw new InvalidOperationException("连接器只能从输出引脚连接到输入引脚");
-            }
-
-            if (!ValidatePinType(src, dst))
-            {
-                throw new InvalidOperationException("连接器数据引脚和执行引脚不能相连");
-            }
-
-            if (!ValidatePinDataType(src.dataType, dst.dataType))
-            {
-                throw new InvalidOperationException($"数据类型不兼容：源引脚类型为 {src.dataType}, 目标引脚类型为 {dst.dataType}");
-            }
-
-
-            var connection = new Connector { src = src, dst = dst };
-            connectors.Add(connection);
-        }
-
-        public void removeConnector(Connector connector)
-        {
-            connectors.Remove(connector);
-        }
-
-        public Connector findConnector(Pin pin)
-        {
-            var connector = connectors.FirstOrDefault(c => c.dst == pin);
-            return connector;
-        }
-
-        public void pushNextConnectNode(Pin pin)
-        {
-            var connector = connectors.FirstOrDefault(c => c.src == pin);
-
-            if (connector != null)
-            {
-                pushNextNode(connector.dst.host);
-
-            }
-        }
-
-        public void pushNextNode(INode node)
-        {
-            executionStack.Push(node);
-        }
-
         /// <summary>
         /// 查找入口节点（没有输入执行引脚连接的节点）
         /// </summary>
@@ -211,80 +263,5 @@ namespace FlowNode.node
             return entryNodes;
         }
 
-        public void run()
-        {
-            try
-            {
-                // 清空执行堆栈
-                executionStack.Clear();
-
-                // 找到所有入口节点
-                var entryNodes = FindEntryNodes();
-                if (entryNodes.Count == 0)
-                {
-                    throw new InvalidOperationException("No entry nodes found in the graph");
-                }
-
-                // 将入口节点按照添加顺序推入堆栈（后添加的先执行）
-                foreach (var node in entryNodes.AsEnumerable().Reverse())
-                {
-                    executionStack.Push(node);
-                }
-
-                //// 将所有根节点（没有输入依赖的节点）推入执行堆栈
-                //executionStack.Push(nodes[0]);
-
-                // 依次从堆栈中取出节点并执行
-                while (executionStack.Count > 0)
-                {
-                    var node = executionStack.Pop();
-                    node.run(this);
-                }
-            }
-            catch (Exception ex)
-            {
-                // 清空执行堆栈
-                executionStack.Clear();
-                throw new InvalidOperationException($"Flow execution error: {ex.Message}", ex);
-            }
-        }
-
-        /// <summary>
-        /// 移除节点及其相关的所有连接器
-        /// </summary>
-        public List<Connector> removeNodeWithConnectors(INode node)
-        {
-            // 保存与该节点相关的所有连接器
-            var relatedConnectors = connectors
-                .Where(c => c.src.host == node || c.dst.host == node)
-                .ToList();
-
-            // 移除所有相关连接器
-            foreach (var connector in relatedConnectors)
-            {
-                connectors.Remove(connector);
-            }
-
-            // 移除节点
-            nodes.Remove(node);
-
-            // 返回被移除的连接器，以便恢复
-            return relatedConnectors;
-        }
-
-        /// <summary>
-        /// 恢复节点及其连接器
-        /// </summary>
-        public void restoreNodeWithConnectors(INode node, List<Connector> nodeConnectors)
-        {
-            // 添加节点
-            nodes.Add(node);
-
-            // 恢复所有连接器
-            foreach (var connector in nodeConnectors)
-            {
-                connectors.Add(connector);
-            }
-        }
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -130,6 +130,21 @@ namespace FlowNode
             nodeViews.Add(new NodeView(newNode)); // 添加视图数据
             Invalidate(); // 重新绘制
 
+        }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            if (keyData == (Keys.Control | Keys.Z))
+            {
+                nodeEditor.Undo();
+                return true;
+            }
+            else if (keyData == (Keys.Control | Keys.Y))
+            {
+                nodeEditor.Redo();
+                return true;
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
         }
     }
 

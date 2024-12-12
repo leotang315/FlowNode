@@ -107,7 +107,7 @@ namespace FlowNode.node
             {
                 // 创建函数节点
                 node = new FunctionNode(null, nodeInfo.Method);
-                node.isAuto = nodeInfo.FunctionAttribute.IsAutoRun;
+                node.IsAutoRun = nodeInfo.FunctionAttribute.IsAutoRun;
             }
             else
             {
@@ -115,6 +115,7 @@ namespace FlowNode.node
             }
 
             node.Name = name;
+            node.NodePath = path;
             node.init();
             return node;
         }
@@ -165,5 +166,29 @@ namespace FlowNode.node
 
         //    return categories;
         //}
+
+        public static string GetNodePathFromType(Type nodeType)
+        {
+            // 查找系统节点
+            var systemNodePath = _nodeInfos.FirstOrDefault(x => 
+                x.Value.IsSystemNode && x.Value.NodeType == nodeType);
+            if (!systemNodePath.Equals(default(KeyValuePair<string, NodeInfo>)))
+            {
+                return systemNodePath.Key;
+            }
+
+            // 查找函数节点
+            var functionNodePath = _nodeInfos.FirstOrDefault(x => 
+                x.Value.IsFunctionNode && 
+                (x.Value.Method.DeclaringType == nodeType || 
+                 nodeType.IsSubclassOf(typeof(FunctionNode))));
+            if (!functionNodePath.Equals(default(KeyValuePair<string, NodeInfo>)))
+            {
+                return functionNodePath.Key;
+            }
+
+            // 如果找不到对应的路径，返回类型的全名作为备用
+            return $"/system/{nodeType.Name}";
+        }
     }
 }

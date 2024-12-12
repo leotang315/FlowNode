@@ -53,6 +53,8 @@
     <Compile Include="app\command\NodeDataCommands.cs" />
     <Compile Include="app\command\NodeViewCommands.cs" />
     <Compile Include="app\node\IntTest.cs" />
+    <Compile Include="app\serialization\NodeSerializationData.cs" />
+    <Compile Include="app\serialization\NodeSerializationService.cs" />
     <Compile Include="app\view\Form2.cs">
       <SubType>Form</SubType>
     </Compile>

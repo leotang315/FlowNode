@@ -20,16 +20,69 @@ namespace FlowNode
         {
             InitializeComponent();
 
-
             ToolStrip toolStrip = new ToolStrip();
-            toolStrip.Items.Add("Execute").Click += (s, e) =>
-            {
-                nodeEditor.ExecuteFlow();
-            };
-            this.Controls.Add(toolStrip);
-            InitializeNodeTreeView();
+            
+            // 执行按钮
+            var executeButton = new ToolStripButton("Execute");
+            executeButton.Click += (s, e) => nodeEditor.ExecuteFlow();
+            toolStrip.Items.Add(executeButton);
 
-            InitializeNodeEditor();           
+            // 保存按钮
+            var saveButton = new ToolStripButton("Save");
+            saveButton.Click += (s, e) =>
+            {
+                using (SaveFileDialog saveDialog = new SaveFileDialog())
+                {
+                    saveDialog.Filter = "XML files (*.xml)|*.xml|All files (*.*)|*.*";
+                    saveDialog.FilterIndex = 1;
+                    saveDialog.RestoreDirectory = true;
+
+                    if (saveDialog.ShowDialog() == DialogResult.OK)
+                    {
+                        try
+                        {
+                            nodeEditor.SaveToFile(saveDialog.FileName);
+                            MessageBox.Show("保存成功！", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show($"保存失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    }
+                }
+            };
+            toolStrip.Items.Add(saveButton);
+
+            // 加载按钮
+            var loadButton = new ToolStripButton("Load");
+            loadButton.Click += (s, e) =>
+            {
+                using (OpenFileDialog openDialog = new OpenFileDialog())
+                {
+                    openDialog.Filter = "XML files (*.xml)|*.xml|All files (*.*)|*.*";
+                    openDialog.FilterIndex = 1;
+                    openDialog.RestoreDirectory = true;
+
+                    if (openDialog.ShowDialog() == DialogResult.OK)
+                    {
+                        try
+                        {
+                            nodeEditor.LoadFromFile(openDialog.FileName);
+                            MessageBox.Show("加载成功！", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show($"加载失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    }
+                }
+            };
+            toolStrip.Items.Add(loadButton);
+
+            this.Controls.Add(toolStrip);
+
+            InitializeNodeTreeView();
+            InitializeNodeEditor();
         }
 
         private void InitializeNodeTreeView()
@@ -145,26 +198,6 @@ namespace FlowNode
                 {
                     MessageBox.Show($"Error creating node: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
-            }
-        }
-        // 示例节点类
-        public class MathNode : NodeBase
-        {
-            public override void allocateDefaultPins()
-            {
-                createPin("A", PinDirection.Input, PinType.Data, typeof(float), 0f);
-                createPin("B", PinDirection.Input, PinType.Data, typeof(float), 0f);
-                createPin("Result", PinDirection.Output, PinType.Data, typeof(float), 0f);
-                createPin("Exec In", PinDirection.Input, PinType.Execute);
-                createPin("Exec Out", PinDirection.Output, PinType.Execute);
-            }
-
-            public override void excute(INodeManager manager)
-            {
-                var a = (float)findPin("A").data;
-                var b = (float)findPin("B").data;
-                findPin("Result").data = a + b;
-                manager.pushNextConnectNode(findPin("Exec Out"));
             }
         }
     }

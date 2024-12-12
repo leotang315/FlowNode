@@ -13,7 +13,7 @@ namespace FlowNode
         public Pin pin_data;
         public DataNode()
         {
-            isAuto = true;
+            IsAutoRun = true;
         }
         public override void allocateDefaultPins()
         {
@@ -41,7 +41,7 @@ namespace FlowNode
         public Pin pin_data;
         public Print2Node()
         {
-            isAuto = true;
+            IsAutoRun = true;
         }
         public override void allocateDefaultPins()
         {

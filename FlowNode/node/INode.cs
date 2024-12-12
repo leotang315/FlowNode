@@ -8,10 +8,13 @@ namespace FlowNode.node
 {
     public interface INode
     {
-        bool isAutoRun();
+        string Name { get; }
+        string NodePath { get; }
+        List<Pin> Pins { get; }
+        bool IsAutoRun { get; }
         void init();
         void clearup();
-        List<Pin> Pins { get; }
+        Pin findPin(string name);
         void run(INodeManager manager);
     }
 }

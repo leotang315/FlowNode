@@ -11,22 +11,15 @@ namespace FlowNode.node
     public abstract class NodeBase : INode
     {
         public string Name { get; set; }
-
-
-
-        public List<Pin> Pins = new List<Pin>();
-        public bool isAuto = false;
-
+        public List<Pin> Pins { get; set; }
+        public bool IsAutoRun {  get; set; }
+        public string NodePath { get;  set; }
 
         public NodeBase()
         {
+            Pins = new List<Pin>();
         }
-
-        public bool isAutoRun()
-        {
-            return isAuto;
-        }
-
+  
         public void init()
         {
             allocateDefaultPins();
@@ -36,10 +29,7 @@ namespace FlowNode.node
         {
 
         }
-        List<Pin> INode.Pins
-        {
-            get { return Pins; }
-        }
+
         public void run(INodeManager manager)
         {
             // 执行当前节点的逻辑
@@ -47,8 +37,13 @@ namespace FlowNode.node
             resolve(manager);
             excute(manager);
         }
+      
+        public abstract void excute(INodeManager manager);
 
-        public void resolve(INodeManager manager)
+        public abstract void allocateDefaultPins();
+
+
+        private void resolve(INodeManager manager)
         {
             // 找出所有输入依赖节点
             var inputPins = Pins.FindAll(n => (n.direction == PinDirection.Input) && (n.pinType == PinType.Data));
@@ -59,7 +54,7 @@ namespace FlowNode.node
                 var connector = manager.findConnector(pin);
                 if (connector != null)
                 {
-                    if (connector.src.host.isAutoRun())
+                    if (connector.src.host.IsAutoRun)
                     {
                         connector.src.host.run(manager);
                     }
@@ -67,10 +62,6 @@ namespace FlowNode.node
                 }
             }
         }
-
-        public abstract void excute(INodeManager manager);
-
-        public abstract void allocateDefaultPins();
 
         public Pin createPin(string name, PinDirection dir, PinType type)
         {
@@ -94,18 +85,6 @@ namespace FlowNode.node
             return pin;
         }
 
-        public Pin findPin(string name, PinDirection dir)
-        {
-            for (int i = 0; i < Pins.Count; i++)
-            {
-                if (Pins[i].Name == name && Pins[i].direction == dir)
-                {
-                    return Pins[i];
-                }
-            }
-            return null;
-        }
-
         public Pin findPin(string name)
         {
             for (int i = 0; i < Pins.Count; i++)
@@ -117,8 +96,6 @@ namespace FlowNode.node
             }
             return null;
         }
-
-
     }
 
 }

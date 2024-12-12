@@ -21,7 +21,7 @@ namespace FlowNode.node
         }
         public override void allocateDefaultPins()
         {
-            if (!isAutoRun())
+            if (!IsAutoRun)
             {
                 pin_input = createPin("Input", PinDirection.Input, new PinType());
                 pin_output = createPin("Output", PinDirection.Output, new PinType());
@@ -53,7 +53,7 @@ namespace FlowNode.node
                 }
             }
 
-            if (!isAutoRun())
+            if (!IsAutoRun)
             {
                 // 将下一个节点推入执行堆栈
                 manager.pushNextConnectNode(pin_output);
