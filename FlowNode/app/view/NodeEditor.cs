@@ -1,4 +1,4 @@
-﻿using FlowNode.node;
+using FlowNode.node;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using static FlowNode.Form2;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using FlowNode.app.command;
 
 namespace FlowNode
 {
@@ -28,6 +29,11 @@ namespace FlowNode
         private float zoom = 1.0f;
         private Pin hoveredPin;
         private Connector selectedConnector;
+        private CommandManager commandManager = new CommandManager();
+        private Point dragStartLocation; // 用于存储拖动开始时的节点位置
+
+        // 添加属性以允许外部访问 NodeManager
+        public NodeManager NodeManager => nodeManager;
 
         public NodeEditor()
         {
@@ -35,12 +41,6 @@ namespace FlowNode
             SetStyle(ControlStyles.AllPaintingInWmPaint |
                     ControlStyles.OptimizedDoubleBuffer |
                     ControlStyles.UserPaint, true);
-
-
-
-        
-   
-
 
             nodeManager = new NodeManager();
             nodeViews = new Dictionary<INode, NodeView>();
@@ -53,10 +53,168 @@ namespace FlowNode
 
         private void NodeEditor_KeyDown(object sender, KeyEventArgs e)
         {
+            // 处理撤销 (Ctrl+Z)
+            if (e.Control && e.KeyCode == Keys.Z)
+            {
+                if (commandManager.CanUndo)
+                {
+                    commandManager.Undo();
+                    Invalidate();
+                }
+                e.Handled = true;
+                return;
+            }
+
+            // 处理重做 (Ctrl+Y)
+            if (e.Control && e.KeyCode == Keys.Y)
+            {
+                if (commandManager.CanRedo)
+                {
+                    commandManager.Redo();
+                    Invalidate();
+                }
+                e.Handled = true;
+                return;
+            }
+
+            // 处理删除选中节点 (Delete)
             if (e.KeyCode == Keys.Delete && selectedNodeView != null)
             {
                 RemoveNode(selectedNodeView.Node);
                 selectedNodeView = null;
+            }
+        }
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            // 确保控件可以接收键盘输入
+            this.Focus();
+
+            base.OnMouseDown(e);
+            var mousePos = ScreenToNode(e.Location);
+
+            if (e.Button == MouseButtons.Left)
+            {
+                var (nodeView, pin, connector) = HitTest(mousePos);
+                selectedNodeView = nodeView;
+                selectedPin = pin;
+                selectedConnector = connector;
+
+                if (selectedPin != null)
+                {
+                    isConnecting = true;
+                    connectingStart = GetPinConnectionPoint(selectedPin);
+                    connectingEnd = mousePos;
+                }
+                else if (selectedNodeView != null)
+                {
+                    isDragging = true;
+                    dragStart = mousePos;
+                    dragStartLocation = selectedNodeView.Bounds.Location;
+                }
+            }
+            else if (e.Button == MouseButtons.Right && selectedConnector != null)
+            {
+                RemoveConnector(selectedConnector);
+                selectedConnector = null;
+            }
+        }
+
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            base.OnMouseMove(e);
+            var mousePos = ScreenToNode(e.Location);
+
+            // 更新悬停的引脚
+            var (_, pin, _) = HitTest(mousePos);
+            if (hoveredPin != pin)
+            {
+                hoveredPin = pin;
+                Invalidate();
+            }
+
+            if (isDragging)
+            {
+                if (e.Button == MouseButtons.Middle)
+                {
+                    panOffset.X += e.X - dragStart.X;
+                    panOffset.Y += e.Y - dragStart.Y;
+                    dragStart = e.Location;
+                }
+                else if (selectedNodeView != null)
+                {
+                    var dx = mousePos.X - dragStart.X;
+                    var dy = mousePos.Y - dragStart.Y;
+                    selectedNodeView.Bounds = new Rectangle(
+                        selectedNodeView.Bounds.X + dx,
+                        selectedNodeView.Bounds.Y + dy,
+                        selectedNodeView.Bounds.Width,
+                        selectedNodeView.Bounds.Height
+                    );
+                    selectedNodeView.UpdatePinLocations();
+                    dragStart = mousePos;
+                }
+                Invalidate();
+            }
+            else if (isConnecting)
+            {
+                connectingEnd = mousePos;
+                Invalidate();
+            }
+        }
+
+        protected override void OnMouseUp(MouseEventArgs e)
+        {
+            base.OnMouseUp(e);
+            var mousePos = ScreenToNode(e.Location);
+
+            if (isConnecting)
+            {
+                var (_, pin, _) = HitTest(mousePos);
+                if (pin != null && selectedPin != null && CanConnect(selectedPin, pin))
+                {
+                    try
+                    {
+                        Pin sourcePin = selectedPin.direction == PinDirection.Output ? selectedPin : pin;
+                        Pin targetPin = selectedPin.direction == PinDirection.Output ? pin : selectedPin;
+                        AddConnector(sourcePin, targetPin);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.Message, "Connection Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+            else if (isDragging && selectedNodeView != null)
+            {
+                // 如果节点位置发生了变化，创建移动命令
+                if (selectedNodeView.Bounds.Location != dragStartLocation)
+                {
+                    MoveNode(selectedNodeView, dragStartLocation, selectedNodeView.Bounds.Location);
+                }
+            }
+
+            isDragging = false;
+            isConnecting = false;
+            selectedPin = null;
+            Invalidate();
+        }
+
+        private void NodeEditor_MouseWheel(object sender, MouseEventArgs e)
+        {
+            float oldZoom = zoom;
+            if (e.Delta > 0)
+                zoom = Math.Min(zoom * 1.1f, 5.0f);
+            else
+                zoom = Math.Max(zoom / 1.1f, 0.2f);
+
+            // 调整平移以保持鼠标位置不变
+            if (oldZoom != zoom)
+            {
+                Point mousePos = e.Location;
+                panOffset.X = mousePos.X - (int)((mousePos.X - panOffset.X) * (zoom / oldZoom));
+                panOffset.Y = mousePos.Y - (int)((mousePos.Y - panOffset.Y) * (zoom / oldZoom));
+                Invalidate();
             }
         }
 
@@ -143,10 +301,10 @@ namespace FlowNode
                 g.FillRectangle(brush, headerRect);
             }
 
-            // 绘制边框 - 根据是否选中使用不同的��色和粗细
+            // 绘制边框 - 根据是否选中使用不同的色和粗细
             if (selectedNodeView == nodeView)
             {
-                // 选中状态 - 使用亮色边框和更粗的线条
+                // 选中状态 - 用亮色边框和更粗的线条
                 using (var pen = new Pen(Color.FromArgb(0, 120, 215), 2))
                 {
                     // 绘制带圆角的矩形
@@ -269,162 +427,53 @@ namespace FlowNode
 
         public void AddNode(NodeBase node, Point location)
         {
-            nodeManager.addNode(node);
-            nodeViews[node] = new NodeView(node, location);
+            var compositeCommand = new CompositeCommand();
+            compositeCommand.AddCommand(new AddNodeDataCommand(nodeManager, node));
+            compositeCommand.AddCommand(new AddNodeViewCommand(nodeViews, node, location));
+            commandManager.ExecuteCommand(compositeCommand);
             Invalidate();
         }
 
         public void RemoveNode(NodeBase node)
         {
-            // 删除所有与该节点相关的连接
-            var connectorsToRemove = nodeManager.getConnectors()
-                .Where(c => c.src.host == node || c.dst.host == node)
-                .ToList();
-
-            foreach (var connector in connectorsToRemove)
-            {
-                nodeManager.removeConnector(connector);
-            }
-
-            // 从节点管理器和视图中移除节点
-            nodeManager.removeNode(node);
-            nodeViews.Remove(node);
-
+            var compositeCommand = new CompositeCommand();
+            compositeCommand.AddCommand(new RemoveNodeViewCommand(nodeViews, node));
+            compositeCommand.AddCommand(new RemoveNodeDataCommand(nodeManager, node));
+            commandManager.ExecuteCommand(compositeCommand);
             Invalidate();
         }
 
-        protected override void OnMouseDown(MouseEventArgs e)
+        /// <summary>
+        /// 添加连接器
+        /// </summary>
+        public void AddConnector(Pin sourcePin, Pin targetPin)
         {
-            base.OnMouseDown(e);
-            var mousePos = ScreenToNode(e.Location);
-            
-            if (e.Button == MouseButtons.Left)
-            {
-                var (nodeView, pin, connector) = HitTest(mousePos);
-                selectedNodeView = nodeView;
-                selectedPin = pin;
-                selectedConnector = connector;
-
-                if (selectedPin != null)
-                {
-                    isConnecting = true;
-                    connectingStart = new Point(
-                        selectedPin.direction == PinDirection.Input ?
-                            nodeView.PinBounds[selectedPin].Left :
-                            nodeView.PinBounds[selectedPin].Right,
-                        nodeView.PinBounds[selectedPin].Top + nodeView.PinBounds[selectedPin].Height / 2);
-                    connectingEnd = mousePos;
-                }
-                else if (selectedNodeView != null)
-                {
-                    isDragging = true;
-                    dragStart = mousePos;
-                }
-            }
-            else if (e.Button == MouseButtons.Right && selectedConnector != null)
-            {
-                // 右键点击连接器时删除它
-                nodeManager.removeConnector(selectedConnector);
-                selectedConnector = null;
-                Invalidate();
-            }
-            else if (e.Button == MouseButtons.Middle)
-            {
-                isDragging = true;
-                dragStart = e.Location;
-            }
-        }
-
-        protected override void OnMouseMove(MouseEventArgs e)
-        {
-            base.OnMouseMove(e);
-            var mousePos = ScreenToNode(e.Location);
-
-            // 更新悬停的引脚
-            var (_, pin,_) = HitTest(mousePos);
-            if (hoveredPin != pin)
-            {
-                hoveredPin = pin;
-                Invalidate();
-            }
-
-            if (isDragging)
-            {
-                if (e.Button == MouseButtons.Middle)
-                {
-                    panOffset.X += e.X - dragStart.X;
-                    panOffset.Y += e.Y - dragStart.Y;
-                    dragStart = e.Location;
-                }
-                else if (selectedNodeView != null)
-                {
-                    var dx = mousePos.X - dragStart.X;
-                    var dy = mousePos.Y - dragStart.Y;
-                    selectedNodeView.Bounds = new Rectangle(
-                        selectedNodeView.Bounds.X + dx,
-                        selectedNodeView.Bounds.Y + dy,
-                        selectedNodeView.Bounds.Width,
-                        selectedNodeView.Bounds.Height
-                    );
-                    selectedNodeView.UpdatePinLocations();
-                    dragStart = mousePos;
-                }
-                Invalidate();
-            }
-            else if (isConnecting)
-            {
-                connectingEnd = mousePos;
-                Invalidate();
-            }
-        }
-
-        protected override void OnMouseUp(MouseEventArgs e)
-        {
-            base.OnMouseUp(e);
-            var mousePos = ScreenToNode(e.Location);
-
-            if (isConnecting)
-            {
-                var (nodeView, pin,_) = HitTest(mousePos);
-                if (pin != null && selectedPin != null)
-                {
-                    try
-                    {
-                        if (selectedPin.direction == PinDirection.Output)
-                            nodeManager.addConnector(selectedPin, pin);
-                        else
-                            nodeManager.addConnector(pin, selectedPin);
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show(ex.Message, "Connection Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
-            }
-
-            isDragging = false;
-            isConnecting = false;
-
-            selectedPin = null;
+            var compositeCommand = new CompositeCommand();
+            compositeCommand.AddCommand(new AddConnectorDataCommand(nodeManager, sourcePin, targetPin));
+            commandManager.ExecuteCommand(compositeCommand);
             Invalidate();
         }
 
-        private void NodeEditor_MouseWheel(object sender, MouseEventArgs e)
+        /// <summary>
+        /// 移除连接器
+        /// </summary>
+        public void RemoveConnector(Connector connector)
         {
-            float oldZoom = zoom;
-            if (e.Delta > 0)
-                zoom = Math.Min(zoom * 1.1f, 5.0f);
-            else
-                zoom = Math.Max(zoom / 1.1f, 0.2f);
+            var compositeCommand = new CompositeCommand();
+            compositeCommand.AddCommand(new RemoveConnectorDataCommand(nodeManager, connector));
+            commandManager.ExecuteCommand(compositeCommand);
+            Invalidate();
+        }
 
-            // 调整平移以保持鼠标位置不变
-            if (oldZoom != zoom)
-            {
-                Point mousePos = e.Location;
-                panOffset.X = mousePos.X - (int)((mousePos.X - panOffset.X) * (zoom / oldZoom));
-                panOffset.Y = mousePos.Y - (int)((mousePos.Y - panOffset.Y) * (zoom / oldZoom));
-                Invalidate();
-            }
+        /// <summary>
+        /// 移动节点
+        /// </summary>
+        public void MoveNode(NodeView nodeView, Point oldLocation, Point newLocation)
+        {
+            var compositeCommand = new CompositeCommand();
+            compositeCommand.AddCommand(new MoveNodeViewCommand(nodeView, oldLocation, newLocation));
+            commandManager.ExecuteCommand(compositeCommand);
+            Invalidate();
         }
 
         public Point ScreenToNode(Point screenPos)
@@ -653,6 +702,19 @@ namespace FlowNode
                 );
             }
             return Point.Empty;
+        }
+
+        // 添加撤销和重做方法
+        public void Undo()
+        {
+            commandManager.Undo();
+            Invalidate();
+        }
+
+        public void Redo()
+        {
+            commandManager.Redo();
+            Invalidate();
         }
     }
 

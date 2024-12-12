@@ -79,7 +79,7 @@ namespace FlowNode.node
         {
             if (current == target)
             {
-                return true; // 找到路径，���成环
+                return true; // 找到路径，成环
             }
 
             if (visited.Contains(current))
@@ -246,6 +246,44 @@ namespace FlowNode.node
                 // 清空执行堆栈
                 executionStack.Clear();
                 throw new InvalidOperationException($"Flow execution error: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// 移除节点及其相关的所有连接器
+        /// </summary>
+        public List<Connector> removeNodeWithConnectors(INode node)
+        {
+            // 保存与该节点相关的所有连接器
+            var relatedConnectors = connectors
+                .Where(c => c.src.host == node || c.dst.host == node)
+                .ToList();
+
+            // 移除所有相关连接器
+            foreach (var connector in relatedConnectors)
+            {
+                connectors.Remove(connector);
+            }
+
+            // 移除节点
+            nodes.Remove(node);
+
+            // 返回被移除的连接器，以便恢复
+            return relatedConnectors;
+        }
+
+        /// <summary>
+        /// 恢复节点及其连接器
+        /// </summary>
+        public void restoreNodeWithConnectors(INode node, List<Connector> nodeConnectors)
+        {
+            // 添加节点
+            nodes.Add(node);
+
+            // 恢复所有连接器
+            foreach (var connector in nodeConnectors)
+            {
+                connectors.Add(connector);
             }
         }
     }

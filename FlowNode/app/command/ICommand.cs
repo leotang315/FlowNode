@@ -3,43 +3,48 @@ using FlowNode.node;
 using System.Collections.Generic;
 using System.Drawing;
 
-
-
-public interface ICommand
+namespace FlowNode.app.command
 {
-    void Execute();
-    void Undo();
-}
-
-public class CommandManager
-{
-    private Stack<ICommand> undoStack = new Stack<ICommand>();
-    private Stack<ICommand> redoStack = new Stack<ICommand>();
-
-    public void ExecuteCommand(ICommand command)
+    public interface ICommand
     {
-        command.Execute();
-        undoStack.Push(command);
-        redoStack.Clear();
+        void Execute();
+        void Undo();
     }
 
-    public void Undo()
+    /// <summary>
+    /// 组合命令，可以将多个命令组合成一个原子操作
+    /// </summary>
+    public class CompositeCommand : ICommand
     {
-        if (undoStack.Count > 0)
+        private readonly List<ICommand> commands = new List<ICommand>();
+
+        public bool HasCommands => commands.Count > 0;
+
+        public void AddCommand(ICommand command)
         {
-            var command = undoStack.Pop();
-            command.Undo();
-            redoStack.Push(command);
+            commands.Add(command);
         }
-    }
 
-    public void Redo()
-    {
-        if (redoStack.Count > 0)
+        public void Clear()
         {
-            var command = redoStack.Pop();
-            command.Execute();
-            undoStack.Push(command);
+            commands.Clear();
+        }
+
+        public void Execute()
+        {
+            foreach (var command in commands)
+            {
+                command.Execute();
+            }
+        }
+
+        public void Undo()
+        {
+            // 反向执行撤销操作
+            for (int i = commands.Count - 1; i >= 0; i--)
+            {
+                commands[i].Undo();
+            }
         }
     }
 }
