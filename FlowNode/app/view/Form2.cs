@@ -20,16 +20,15 @@ namespace FlowNode
         {
             InitializeComponent();
 
+            // 创建主工具栏
             ToolStrip toolStrip = new ToolStrip();
-            
-            // 执行按钮
-            var executeButton = new ToolStripButton("Execute");
-            executeButton.Click += (s, e) => nodeEditor.ExecuteFlow();
-            toolStrip.Items.Add(executeButton);
 
-            // 保存按钮
-            var saveButton = new ToolStripButton("Save");
-            saveButton.Click += (s, e) =>
+            // 创建文件下拉按钮
+            var fileButton = new ToolStripDropDownButton("File");
+            
+            // 创建保存菜单项
+            var saveMenuItem = new ToolStripMenuItem("Save");
+            saveMenuItem.Click += (s, e) =>
             {
                 using (SaveFileDialog saveDialog = new SaveFileDialog())
                 {
@@ -51,11 +50,11 @@ namespace FlowNode
                     }
                 }
             };
-            toolStrip.Items.Add(saveButton);
+            fileButton.DropDownItems.Add(saveMenuItem);
 
-            // 加载按钮
-            var loadButton = new ToolStripButton("Load");
-            loadButton.Click += (s, e) =>
+            // 创建打开菜单项
+            var openMenuItem = new ToolStripMenuItem("Open");
+            openMenuItem.Click += (s, e) =>
             {
                 using (OpenFileDialog openDialog = new OpenFileDialog())
                 {
@@ -77,7 +76,18 @@ namespace FlowNode
                     }
                 }
             };
-            toolStrip.Items.Add(loadButton);
+            fileButton.DropDownItems.Add(openMenuItem);
+
+            // 添加文件按钮到工具栏
+            toolStrip.Items.Add(fileButton);
+
+            // 添加分隔符
+            toolStrip.Items.Add(new ToolStripSeparator());
+
+            // 添加执行按钮
+            var executeButton = new ToolStripButton("Execute");
+            executeButton.Click += (s, e) => nodeEditor.ExecuteFlow();
+            toolStrip.Items.Add(executeButton);
 
             this.Controls.Add(toolStrip);
 

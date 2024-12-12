@@ -191,15 +191,15 @@ namespace FlowNode.app.serialization
                         }
                     }
 
-                    // 恢复引脚数据
-                    foreach (var pinData in nodeData.Pins)
-                    {
-                        var pin = node.findPin(pinData.Name);
-                        if (pin != null)
-                        {
-                            pin.data = pinData.DefaultValue;
-                        }
-                    }
+                    //// 恢复引脚数据
+                    //foreach (var pinData in nodeData.Pins)
+                    //{
+                    //    var pin = node.findPin(pinData.Name);
+                    //    if (pin != null)
+                    //    {
+                    //        pin.data = pinData.DefaultValue;
+                    //    }
+                    //}
 
                     nodeManager.addNode(node);
                     nodeMap[nodeData.Id] = node;
