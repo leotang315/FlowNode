@@ -174,7 +174,6 @@ namespace FlowNode
                 if (hoveredPin != pin)
                 {
                     hoveredPin = pin;
-                    Invalidate();
                 }
                 Invalidate();
             }
@@ -216,6 +215,7 @@ namespace FlowNode
             isDraggingGraph = false;
             isConnecting = false;
             selectedPin = null;
+            hoveredPin = null;
             Invalidate();
         }
 
@@ -356,25 +356,38 @@ namespace FlowNode
                 {
                     Color pinColor = pin.pinType == PinType.Execute ? Color.FromArgb(255, 128, 0) : Color.FromArgb(0, 120, 255);
 
-                    // 判断是否需要高亮显示
-                    bool shouldHighlight = false;
-                    if (isConnecting && selectedPin != null && pin != selectedPin)
-                    {
-                        // 检查连接兼容性
-                        if (selectedPin.direction != pin.direction && // 方向相反
-                            selectedPin.pinType == pin.pinType &&    // 类型相同
-                            ((selectedPin.direction == PinDirection.Output && pin.direction == PinDirection.Input) ||
-                             (selectedPin.direction == PinDirection.Input && pin.direction == PinDirection.Output)))
-                        {
-                            shouldHighlight = true;
-                        }
-                    }
+                    //// 判断是否需要高亮显示
+                    //bool shouldHighlight = false;
+                    //if (isConnecting && selectedPin != null && pin != selectedPin)
+                    //{
+                    //    // 检查连接兼容性
+                    //    if (selectedPin.direction != pin.direction && // 方向相反
+                    //        selectedPin.pinType == pin.pinType &&    // 类型相同
+                    //        ((selectedPin.direction == PinDirection.Output && pin.direction == PinDirection.Input) ||
+                    //         (selectedPin.direction == PinDirection.Input && pin.direction == PinDirection.Output)))
+                    //    {
+                    //        shouldHighlight = true;
+                    //    }
+                    //}
 
-                    // 高亮效果
-                    if (shouldHighlight)
+                    //// 高亮效果
+                    //if (shouldHighlight)
+                    //{
+                    //    // 绘制外发光效果
+                    //    using (var glowBrush = new SolidBrush(Color.FromArgb(100, pinColor)))
+                    //    {
+                    //        var glowRect = pinRect;
+                    //        glowRect.Inflate(4, 4);
+                    //        g.FillEllipse(glowBrush, glowRect);
+                    //    }
+                    //}
+
+                   
+                    if (hoveredPin == pin)
                     {
                         // 绘制外发光效果
-                        using (var glowBrush = new SolidBrush(Color.FromArgb(100, pinColor)))
+                        var pinLinghtColor = CanConnect(selectedPin, hoveredPin) ? Color.FromArgb(0, 120, 255) : Color.FromArgb(255, 0, 0);
+                        using (var glowBrush = new SolidBrush(Color.FromArgb(100, pinLinghtColor)))
                         {
                             var glowRect = pinRect;
                             glowRect.Inflate(4, 4);
