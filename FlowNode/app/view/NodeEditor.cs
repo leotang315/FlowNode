@@ -19,20 +19,30 @@ namespace FlowNode
     {
         private NodeManager nodeManager;
         private Dictionary<INode, NodeView> nodeViews;
+        private CommandManager commandManager = new CommandManager();
+        private NodeSerializationService serializationService;
+
+        private Point panOffset;   // 用于画布平移
+        private float zoom = 1.0f; // 用于画布缩放
         private NodeView selectedNodeView;
+        private Connector selectedConnector;
         private Pin selectedPin;
-        private Point dragStart;
-        private bool isDragging;
-        private bool isConnecting;
+        private Pin hoveredPin;
+
+        private bool isDraggingGraph;  // 指示拖动画布
+        private Point dragGraphStart;  // 用于存储拖动画布开始时鼠标屏幕坐标
+
+        private bool isDraggingNode;     // 指示拖动
+        private Point dragNodeMouseStart; // 用于存储拖动开始时的鼠标位置
+        private Point dragNodeStart; // 用于存储拖动开始时的节点位置
+
+
+        private bool isConnecting;       // 指示
         private Point connectingStart;
         private Point connectingEnd;
-        private Point panOffset;
-        private float zoom = 1.0f;
-        private Pin hoveredPin;
-        private Connector selectedConnector;
-        private CommandManager commandManager = new CommandManager();
-        private Point dragStartLocation; // 用于存储拖动开始时的节点位置
-        private NodeSerializationService serializationService;
+
+
+
 
         // 添加属性以允许外部访问 NodeManager
         public NodeManager NodeManager => nodeManager;
@@ -111,10 +121,15 @@ namespace FlowNode
                 }
                 else if (selectedNodeView != null)
                 {
-                    isDragging = true;
-                    dragStart = mousePos;
-                    dragStartLocation = selectedNodeView.Bounds.Location;
+                    isDraggingNode = true;
+                    dragNodeMouseStart = mousePos;
+                    dragNodeStart = selectedNodeView.Bounds.Location;
                 }
+            }
+            else if (e.Button == MouseButtons.Middle)
+            {
+                isDraggingGraph = true;
+                dragGraphStart = e.Location;
             }
             else if (e.Button == MouseButtons.Right && selectedConnector != null)
             {
@@ -127,27 +142,12 @@ namespace FlowNode
         {
             base.OnMouseMove(e);
             var mousePos = ScreenToNode(e.Location);
-
-            // 更新悬停的引脚
-            var (_, pin, _) = HitTest(mousePos);
-            if (hoveredPin != pin)
+            if (isDraggingNode)
             {
-                hoveredPin = pin;
-                Invalidate();
-            }
-
-            if (isDragging)
-            {
-                if (e.Button == MouseButtons.Middle)
+                if (selectedNodeView != null)
                 {
-                    panOffset.X += e.X - dragStart.X;
-                    panOffset.Y += e.Y - dragStart.Y;
-                    dragStart = e.Location;
-                }
-                else if (selectedNodeView != null)
-                {
-                    var dx = mousePos.X - dragStart.X;
-                    var dy = mousePos.Y - dragStart.Y;
+                    var dx = mousePos.X - dragNodeMouseStart.X;
+                    var dy = mousePos.Y - dragNodeMouseStart.Y;
                     selectedNodeView.Bounds = new Rectangle(
                         selectedNodeView.Bounds.X + dx,
                         selectedNodeView.Bounds.Y + dy,
@@ -155,15 +155,30 @@ namespace FlowNode
                         selectedNodeView.Bounds.Height
                     );
                     selectedNodeView.UpdatePinLocations();
-                    dragStart = mousePos;
+                    dragNodeMouseStart = mousePos;
                 }
+                Invalidate();
+            }
+            else if (isDraggingGraph)
+            {
+                panOffset.X += e.X - dragGraphStart.X;
+                panOffset.Y += e.Y - dragGraphStart.Y;
+                dragGraphStart = e.Location;
                 Invalidate();
             }
             else if (isConnecting)
             {
                 connectingEnd = mousePos;
+                // 更新悬停的引脚
+                var (_, pin, _) = HitTest(mousePos);
+                if (hoveredPin != pin)
+                {
+                    hoveredPin = pin;
+                    Invalidate();
+                }
                 Invalidate();
             }
+
         }
 
         protected override void OnMouseUp(MouseEventArgs e)
@@ -188,16 +203,17 @@ namespace FlowNode
                     }
                 }
             }
-            else if (isDragging && selectedNodeView != null)
+            else if (isDraggingNode && selectedNodeView != null)
             {
                 // 如果节点位置发生了变化，创建移动命令
-                if (selectedNodeView.Bounds.Location != dragStartLocation)
+                if (selectedNodeView.Bounds.Location != dragNodeStart)
                 {
-                    MoveNode(selectedNodeView, dragStartLocation, selectedNodeView.Bounds.Location);
+                    MoveNode(selectedNodeView, dragNodeStart, selectedNodeView.Bounds.Location);
                 }
             }
 
-            isDragging = false;
+            isDraggingNode = false;
+            isDraggingGraph = false;
             isConnecting = false;
             selectedPin = null;
             Invalidate();
@@ -489,7 +505,7 @@ namespace FlowNode
 
         private (NodeView nodeView, Pin pin, Connector connector) HitTest(Point location)
         {
- 
+
 
             // 检查节点和引脚
             foreach (var nodeView in nodeViews.Values)
@@ -549,7 +565,7 @@ namespace FlowNode
             {
                 float t = i / (float)segments;
                 Point current = CalculateBezierPoint(t, start, control1, control2, end);
-                
+
                 // 检查点到线段的距离
                 if (DistanceToLineSegment(point, prev, current) <= threshold)
                     return true;
@@ -584,7 +600,7 @@ namespace FlowNode
         {
             float dx = lineEnd.X - lineStart.X;
             float dy = lineEnd.Y - lineStart.Y;
-            
+
             if (dx == 0 && dy == 0)
                 return (float)Math.Sqrt(Math.Pow(point.X - lineStart.X, 2) + Math.Pow(point.Y - lineStart.Y, 2));
 
@@ -643,7 +659,7 @@ namespace FlowNode
         private System.Drawing.Drawing2D.GraphicsPath CreateRoundedRectangle(Rectangle bounds, int radius)
         {
             var path = new System.Drawing.Drawing2D.GraphicsPath();
-            
+
             // 左上角
             path.AddArc(bounds.X, bounds.Y, radius * 2, radius * 2, 180, 90);
             // 右上角
@@ -652,7 +668,7 @@ namespace FlowNode
             path.AddArc(bounds.Right - radius * 2, bounds.Bottom - radius * 2, radius * 2, radius * 2, 0, 90);
             // 左下角
             path.AddArc(bounds.X, bounds.Bottom - radius * 2, radius * 2, radius * 2, 90, 90);
-            
+
             path.CloseFigure();
             return path;
         }
@@ -661,7 +677,7 @@ namespace FlowNode
         private void DrawConnectingLine(Graphics g)
         {
             // 如果没有悬停的引脚，使用鼠标位置作为终点
-            Point endPoint = hoveredPin != null ? 
+            Point endPoint = hoveredPin != null ?
                 GetPinConnectionPoint(hoveredPin) : connectingEnd;
 
             // 计算贝塞尔曲线的控制点
@@ -696,7 +712,7 @@ namespace FlowNode
         // 添加辅助方法来获取引脚的连接点
         private Point GetPinConnectionPoint(Pin pin)
         {
-            if (nodeViews.TryGetValue(pin.host, out NodeView nodeView) && 
+            if (nodeViews.TryGetValue(pin.host, out NodeView nodeView) &&
                 nodeView.PinBounds.TryGetValue(pin, out Rectangle pinRect))
             {
                 return new Point(
