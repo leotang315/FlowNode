@@ -91,9 +91,10 @@ namespace FlowNode
         protected override void OnMouseDown(MouseEventArgs e)
         {
             // 确保控件可以接收键盘输入
+            base.OnMouseDown(e);
             this.Focus();
 
-            base.OnMouseDown(e);
+            
             var mousePos = ScreenToNode(e.Location);
 
             if (e.Button == MouseButtons.Left)
@@ -128,15 +129,7 @@ namespace FlowNode
             base.OnMouseMove(e);
             var mousePos = ScreenToNode(e.Location);
 
-            // 更新悬停的引脚
-            var (_, pin, _) = HitTest(mousePos);
-            if (hoveredPin != pin)
-            {
-                hoveredPin = pin;
-                Invalidate();
-            }
-
-            if (isDragging)
+            if (isDragging && selectedNodeView != null)
             {
                 if (e.Button == MouseButtons.Middle)
                 {
@@ -162,7 +155,28 @@ namespace FlowNode
             else if (isConnecting)
             {
                 connectingEnd = mousePos;
-                Invalidate();
+
+                // 使用 HitTest 检查鼠标位置
+                var oldHoveredPin = hoveredPin;
+                var (_, pin, _) = HitTest(mousePos);
+                
+                // 只在可以连接时设置悬停引脚
+                hoveredPin = (pin != null && CanConnect(selectedPin, pin)) ? pin : null;
+
+                // 如果悬停状态改变，重绘
+                if (oldHoveredPin != hoveredPin)
+                {
+                    Invalidate();
+                }
+            }
+            else
+            {
+                // 不在连接状态时清除悬停
+                if (hoveredPin != null)
+                {
+                    hoveredPin = null;
+                    Invalidate();
+                }
             }
         }
 
@@ -246,7 +260,7 @@ namespace FlowNode
                 DrawConnectingLine(g);
             }
 
-            // 绘制节点
+            // 绘制节点（包含引脚）
             foreach (var nodeView in nodeViews.Values)
             {
                 DrawNode(g, nodeView);
@@ -334,61 +348,7 @@ namespace FlowNode
             }
 
             // 绘制引脚
-            foreach (var pin in nodeView.Node.Pins)
-            {
-                if (nodeView.PinBounds.TryGetValue(pin, out Rectangle pinRect))
-                {
-                    Color pinColor = pin.pinType == PinType.Execute ? Color.FromArgb(255, 128, 0) : Color.FromArgb(0, 120, 255);
-
-                    // 判断是否需要高亮显示
-                    bool shouldHighlight = false;
-                    if (isConnecting && selectedPin != null && pin != selectedPin)
-                    {
-                        // 检查连接兼容性
-                        if (selectedPin.direction != pin.direction && // 方向相反
-                            selectedPin.pinType == pin.pinType &&    // 类型相同
-                            ((selectedPin.direction == PinDirection.Output && pin.direction == PinDirection.Input) ||
-                             (selectedPin.direction == PinDirection.Input && pin.direction == PinDirection.Output)))
-                        {
-                            shouldHighlight = true;
-                        }
-                    }
-
-                    // 高亮效果
-                    if (shouldHighlight)
-                    {
-                        // 绘制外发光效果
-                        using (var glowBrush = new SolidBrush(Color.FromArgb(100, pinColor)))
-                        {
-                            var glowRect = pinRect;
-                            glowRect.Inflate(4, 4);
-                            g.FillEllipse(glowBrush, glowRect);
-                        }
-                    }
-
-                    // 绘制引脚
-                    using (var brush = new SolidBrush(pinColor))
-                    {
-                        g.FillEllipse(brush, pinRect);
-                    }
-
-                    // 绘制引脚名称
-                    using (var brush = new SolidBrush(Color.White))
-                    {
-                        var textRect = new Rectangle(
-                            pin.direction == PinDirection.Input ? pinRect.Right + 5 : pinRect.Left - 100,
-                            pinRect.Top - 4,
-                            100,
-                            20);
-                        var format = new StringFormat
-                        {
-                            Alignment = pin.direction == PinDirection.Input ? StringAlignment.Near : StringAlignment.Far,
-                            LineAlignment = StringAlignment.Center
-                        };
-                        g.DrawString(pin.Name, Font, brush, textRect, format);
-                    }
-                }
-            }
+            DrawPins(g, nodeView);
         }
 
         private void DrawConnector(Graphics g, Connector connector)
@@ -742,6 +702,62 @@ namespace FlowNode
             catch (Exception ex)
             {
                 MessageBox.Show($"加载失败: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void DrawPins(Graphics g, NodeView nodeView)
+        {
+            foreach (var pinPair in nodeView.PinBounds)
+            {
+                var pin = pinPair.Key;
+                var bounds = pinPair.Value;
+
+                Color pinColor = pin.pinType == PinType.Execute ? Color.FromArgb(255, 128, 0) : Color.FromArgb(0, 120, 255);
+
+                // 判断是否需要高亮显示
+                bool shouldHighlight = false;
+                if (isConnecting && selectedPin != null && pin != selectedPin)
+                {
+                    // 检查连接兼容性
+                    if (CanConnect(selectedPin, pin))
+                    {
+                        shouldHighlight = true;
+                    }
+                }
+
+                // 高亮效果
+                if (shouldHighlight)
+                {
+                    // 绘制外发光效果
+                    using (var glowBrush = new SolidBrush(Color.FromArgb(100, pinColor)))
+                    {
+                        var glowRect = bounds;
+                        glowRect.Inflate(4, 4);
+                        g.FillEllipse(glowBrush, glowRect);
+                    }
+                }
+
+                // 绘制引脚
+                using (var brush = new SolidBrush(pinColor))
+                {
+                    g.FillEllipse(brush, bounds);
+                }
+
+                // 绘制引脚名称
+                using (var brush = new SolidBrush(Color.White))
+                {
+                    var textRect = new Rectangle(
+                        pin.direction == PinDirection.Input ? bounds.Right + 5 : bounds.Left - 100,
+                        bounds.Top - 4,
+                        100,
+                        20);
+                    var format = new StringFormat
+                    {
+                        Alignment = pin.direction == PinDirection.Input ? StringAlignment.Near : StringAlignment.Far,
+                        LineAlignment = StringAlignment.Center
+                    };
+                    g.DrawString(pin.Name, Font, brush, textRect, format);
+                }
             }
         }
     }
