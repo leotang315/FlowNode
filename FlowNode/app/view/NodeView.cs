@@ -226,7 +226,7 @@ namespace FlowNode.app.view
         {
             foreach (var control in Controls)
             {
-                if (control.Visible && control.Enabled)
+                if (control.Visible && control.Enabled && control.Bounds.Contains(location))
                 {
                     control.OnMouseUp(location, button);
                     return;

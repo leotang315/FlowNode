@@ -72,6 +72,7 @@ namespace FlowNode.app.view
 
             // 调整节点大小以适应所有控��
             Bounds = new Rectangle(Bounds.X, Bounds.Y, 200, 250);
+            SetupEventHandlers();
         }
 
         private void SetupEventHandlers()
