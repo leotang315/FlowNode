@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Drawing;
 using FlowNode.node;
+using FlowNode.app.view;
 namespace FlowNode.app.command
 {
     /// <summary>
@@ -24,7 +25,7 @@ namespace FlowNode.app.command
 
         public void Execute()
         {
-            nodeView = new NodeView((NodeBase)node, location);
+            nodeView= NodeViewFactory.CreateNodeView((NodeBase)node, location);
             nodeViews.Add(node, nodeView);
         }
 

@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Drawing;
 using FlowNode.node;
-
+using FlowNode.app.view;
 namespace FlowNode.app.serialization
 {
     public class NodeSerializationService
@@ -209,7 +209,7 @@ namespace FlowNode.app.serialization
                     if (viewData != null)
                     {
                         var bounds = new Rectangle(viewData.X, viewData.Y, viewData.Width, viewData.Height);
-                        var nodeView = new NodeView((NodeBase)node, new Point(bounds.X, bounds.Y));
+                        var nodeView = NodeViewFactory.CreateNodeView((NodeBase)node, new Point(bounds.X, bounds.Y));
                         nodeView.Bounds = bounds;
                         nodeViews.Add(node, nodeView);
                     }

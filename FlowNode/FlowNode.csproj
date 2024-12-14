@@ -55,6 +55,8 @@
     <Compile Include="app\node\IntTest.cs" />
     <Compile Include="app\serialization\NodeSerializationData.cs" />
     <Compile Include="app\serialization\NodeSerializationService.cs" />
+    <Compile Include="app\view\control\NodeControl.cs" />
+    <Compile Include="app\view\DefaultNodeView.cs" />
     <Compile Include="app\view\Form2.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -68,6 +70,8 @@
     <Compile Include="app\view\NodeEditor.Designer.cs">
       <DependentUpon>NodeEditor.cs</DependentUpon>
     </Compile>
+    <Compile Include="app\view\NodeView.cs" />
+    <Compile Include="app\view\NodeViewFactory.cs" />
     <Compile Include="NodeSearchMenu.cs">
       <SubType>Form</SubType>
     </Compile>
