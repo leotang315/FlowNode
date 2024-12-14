@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using FlowNode.app.view;
-
+using FlowNode.node;
 namespace FlowNode
 {
     static class Program
@@ -29,6 +29,9 @@ namespace FlowNode
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+
+            // 在应用程序启动时注册
+            NodeViewFactory.RegisterNodeView<TestNode, TestNodeView>();
 
             Application.Run(new Form2());
 

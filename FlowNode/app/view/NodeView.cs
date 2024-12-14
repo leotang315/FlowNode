@@ -10,19 +10,42 @@ namespace FlowNode.app.view
     public abstract class NodeView
     {
         public NodeBase Node { get; protected set; }
-        public Rectangle Bounds { get; set; }
+        private Rectangle bounds;
+        public Rectangle Bounds
+        {
+            get => bounds;
+            set
+            {
+                bounds = value;
+                UpdatePinLocations();
+                UpdateControlsLayout();
+            }
+        }
         public Dictionary<Pin, Rectangle> PinBounds { get; protected set; }
         public List<NodeControl> Controls { get; protected set; }
+        public NodeEditor Parent { get; set; }
+
+        public Graphics CreateGraphics()
+        {
+            return Parent?.CreateGraphics();
+        }
+
+        public void Invalidate()
+        {
+            // 通知父控件重绘
+            Parent?.Invalidate(Bounds);
+        }
 
         protected NodeView(NodeBase node, Point location)
         {
             Node = node;
-            Bounds = new Rectangle(location, new Size(200, 120));
+            bounds = new Rectangle(location, new Size(200, 120));
             PinBounds = new Dictionary<Pin, Rectangle>();
             Controls = new List<NodeControl>();
-            
+
             InitializeControls();
             UpdatePinLocations();
+            UpdateControlsLayout();
         }
 
         // 子类重写此方法来初始化自己的控件
@@ -73,7 +96,7 @@ namespace FlowNode.app.view
             {
                 if (PinBounds.TryGetValue(pin, out Rectangle pinRect))
                 {
-                    Color pinColor = pin.pinType == PinType.Execute ? 
+                    Color pinColor = pin.pinType == PinType.Execute ?
                         Color.FromArgb(255, 128, 0) : Color.FromArgb(0, 120, 255);
 
                     // 绘制引脚
@@ -92,7 +115,7 @@ namespace FlowNode.app.view
                             20);
                         var format = new StringFormat
                         {
-                            Alignment = pin.direction == PinDirection.Input ? 
+                            Alignment = pin.direction == PinDirection.Input ?
                                 StringAlignment.Near : StringAlignment.Far,
                             LineAlignment = StringAlignment.Center
                         };
@@ -102,7 +125,7 @@ namespace FlowNode.app.view
             }
         }
 
-        public virtual void UpdatePinLocations()
+        protected virtual void UpdatePinLocations()
         {
             PinBounds.Clear();
 
@@ -135,34 +158,47 @@ namespace FlowNode.app.view
                     8);
             }
 
-            UpdateControlsLayout();
         }
 
         protected virtual void UpdateControlsLayout()
         {
-            //int currentY = Bounds.Top + 30;
+            // 计算输入和输出引脚的数量，用于确定节点的最小高度
+            int maxPins = Math.Max(
+                Node.Pins.Count(p => p.direction == PinDirection.Input),
+                Node.Pins.Count(p => p.direction == PinDirection.Output)
+            );
 
-            //foreach (var control in Controls)
-            //{
-            //    if (control is NodeLabel)
-            //    {
-            //        control.Bounds = new Rectangle(Bounds.X + 10, currentY, Bounds.Width - 20, 20);
-            //        currentY += 25;
-            //    }
-            //    else if (control is NodeButton)
-            //    {
-            //        control.Bounds = new Rectangle(Bounds.X + 10, currentY, Bounds.Width - 20, 25);
-            //        currentY += 30;
-            //    }
-            //    else if (control is NodeProgressBar)
-            //    {
-            //        control.Bounds = new Rectangle(Bounds.X + 10, currentY, Bounds.Width - 20, 15);
-            //        currentY += 20;
-            //    }
-            //}
+            // 从标题栏下方开始布局
+            int currentY = bounds.Y + 30;
+            const int MARGIN = 10;
+            const int SPACING = 5;
 
-            //// 调整节点高度
-            //Bounds = new Rectangle(Bounds.X, Bounds.Y, Bounds.Width, Math.Max(120, currentY - Bounds.Top + 10));
+            // 遍历所有控件，从上到下布局
+            foreach (var control in Controls)
+            {
+                // 设置控件位置
+                control.Bounds = new Rectangle(
+                    bounds.X + MARGIN,                    // X位置：左边距
+                    currentY,                             // Y位置：当前高度
+                    bounds.Width - (MARGIN * 2),          // 宽度：节点宽度减去左右边距
+                    control.Bounds.Height                 // 保持控件原有高度
+                );
+
+                // 更新下一个控件的Y位置
+                currentY = control.Bounds.Bottom + SPACING;
+            }
+
+            // 计算所需的总高度
+            int requiredHeight = Math.Max(
+                maxPins * 25 + 40,                       // 引脚所需的最小高度
+                currentY - bounds.Y + MARGIN              // 控件所需的高度
+            );
+
+            // 更新节点高度，保持宽度不变
+            bounds = new Rectangle(
+                bounds.Location,
+                new Size(bounds.Width, Math.Max(120, requiredHeight))
+            );
         }
 
         public void AddControl(NodeControl control)
@@ -177,7 +213,7 @@ namespace FlowNode.app.view
         {
             foreach (var control in Controls)
             {
-                if (control.Bounds.Contains(location))
+                if (control.Visible && control.Enabled && control.Bounds.Contains(location))
                 {
                     control.OnMouseDown(location, button);
                     return true;
@@ -190,16 +226,48 @@ namespace FlowNode.app.view
         {
             foreach (var control in Controls)
             {
-                control.OnMouseUp(location, button);
+                if (control.Visible && control.Enabled)
+                {
+                    control.OnMouseUp(location, button);
+                    return;
+                }
             }
         }
 
         public virtual void HandleMouseMove(Point location)
         {
+            // 从后向前遍历控件
             foreach (var control in Controls)
             {
-                control.OnMouseMove(location);
+                if (control.Visible && control.Enabled)
+                {
+                    control.OnMouseMove(location);
+                    return;
+                }
+            }
+        }
+
+        // 添加键盘事件处理
+        public virtual void HandleKeyPress(KeyPressEventArgs e)
+        {
+            foreach (var control in Controls)
+            {
+                if (control is NodeTextBox textBox && textBox.Visible && textBox.Enabled)
+                {
+                    textBox.HandleKeyPress(e);
+                }
+            }
+        }
+
+        public virtual void HandleKeyDown(KeyEventArgs e)
+        {
+            foreach (var control in Controls)
+            {
+                if (control is NodeTextBox textBox && textBox.Visible && textBox.Enabled)
+                {
+                    textBox.HandleKeyDown(e);
+                }
             }
         }
     }
-} 
+}

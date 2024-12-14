@@ -4,6 +4,7 @@ using System.Linq;
 using System.Drawing;
 using FlowNode.node;
 using FlowNode.app.view;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 namespace FlowNode.app.command
 {
     /// <summary>
@@ -11,27 +12,25 @@ namespace FlowNode.app.command
     /// </summary>
     public class AddNodeViewCommand : ICommand
     {
-        private readonly Dictionary<INode, NodeView> nodeViews;
-        private readonly INode node;
-        private readonly Point location;
+        private Dictionary<INode, NodeView> nodeViews;
+        private Point location;
         private NodeView nodeView;
 
-        public AddNodeViewCommand(Dictionary<INode, NodeView> nodeViews, INode node, Point location)
+        public AddNodeViewCommand(Dictionary<INode, NodeView> nodeViews, NodeView nodeView , Point location)
         {
             this.nodeViews = nodeViews;
-            this.node = node;
             this.location = location;
+            this.nodeView = nodeView;
         }
 
         public void Execute()
         {
-            nodeView= NodeViewFactory.CreateNodeView((NodeBase)node, location);
-            nodeViews.Add(node, nodeView);
+            nodeViews[nodeView.Node] = nodeView;
         }
 
         public void Undo()
         {
-            nodeViews.Remove(node);
+            nodeViews.Remove(nodeView.Node);
         }
     }
 
@@ -75,13 +74,11 @@ namespace FlowNode.app.command
         public void Execute()
         {
             nodeView.Bounds = new Rectangle(newLocation, nodeView.Bounds.Size);
-            nodeView.UpdatePinLocations();
         }
 
         public void Undo()
         {
             nodeView.Bounds = new Rectangle(oldLocation, nodeView.Bounds.Size);
-            nodeView.UpdatePinLocations();
         }
     }
 } 

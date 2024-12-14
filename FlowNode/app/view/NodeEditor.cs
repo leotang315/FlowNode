@@ -61,12 +61,19 @@ namespace FlowNode
 
             // 启用鼠标滚轮
             this.MouseWheel += NodeEditor_MouseWheel;
-            this.KeyDown += NodeEditor_KeyDown;
-            serializationService = new NodeSerializationService(nodeManager, nodeViews);
+                serializationService = new NodeSerializationService(nodeManager, nodeViews);
         }
 
-        private void NodeEditor_KeyDown(object sender, KeyEventArgs e)
+
+        protected override void OnKeyPress(KeyPressEventArgs e)
         {
+            base.OnKeyPress(e);
+            selectedNodeView?.HandleKeyPress(e);
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            base.OnKeyDown(e);
             // 处理撤销 (Ctrl+Z)
             if (e.Control && e.KeyCode == Keys.Z)
             {
@@ -97,8 +104,8 @@ namespace FlowNode
                 RemoveNode(selectedNodeView.Node);
                 selectedNodeView = null;
             }
+            selectedNodeView?.HandleKeyDown(e);
         }
-
         protected override void OnMouseDown(MouseEventArgs e)
         {
             // 确保控件可以接收键盘输入
@@ -106,6 +113,12 @@ namespace FlowNode
 
             base.OnMouseDown(e);
             var mousePos = ScreenToNode(e.Location);
+
+            //selectedNodeView?.HandleMouseDown(mousePos, e.Button);
+            if (selectedNodeView?.HandleMouseDown(mousePos, e.Button) == true)
+            {
+                return;  // 如果控件处理了事件，就不再继续处理
+            }
 
             if (e.Button == MouseButtons.Left)
             {
@@ -143,6 +156,8 @@ namespace FlowNode
         {
             base.OnMouseMove(e);
             var mousePos = ScreenToNode(e.Location);
+            selectedNodeView?.HandleMouseMove(mousePos);
+
             if (isDraggingNode)
             {
                 if (selectedNodeView != null)
@@ -155,7 +170,6 @@ namespace FlowNode
                         selectedNodeView.Bounds.Width,
                         selectedNodeView.Bounds.Height
                     );
-                    selectedNodeView.UpdatePinLocations();
                     dragNodeMouseStart = mousePos;
                 }
                 Invalidate();
@@ -186,6 +200,7 @@ namespace FlowNode
         {
             base.OnMouseUp(e);
             var mousePos = ScreenToNode(e.Location);
+            selectedNodeView?.HandleMouseUp(mousePos, e.Button);
 
             if (isConnecting)
             {
@@ -385,7 +400,9 @@ namespace FlowNode
     {
         var compositeCommand = new CompositeCommand();
         compositeCommand.AddCommand(new AddNodeDataCommand(nodeManager, node));
-        compositeCommand.AddCommand(new AddNodeViewCommand(nodeViews, node, location));
+        var nodeView = NodeViewFactory.CreateNodeView(node, location);
+        nodeView.Parent = this;
+        compositeCommand.AddCommand(new AddNodeViewCommand(nodeViews, nodeView, location));
         commandManager.ExecuteCommand(compositeCommand);
         Invalidate();
     }
@@ -697,6 +714,8 @@ namespace FlowNode
             MessageBox.Show($"加载失败: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
+
+
 }
 
 

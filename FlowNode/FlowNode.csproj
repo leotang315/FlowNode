@@ -55,7 +55,13 @@
     <Compile Include="app\node\IntTest.cs" />
     <Compile Include="app\serialization\NodeSerializationData.cs" />
     <Compile Include="app\serialization\NodeSerializationService.cs" />
+    <Compile Include="app\view\control\NodeButton.cs" />
+    <Compile Include="app\view\control\NodeCheckBox.cs" />
+    <Compile Include="app\view\control\NodeComboBox.cs" />
     <Compile Include="app\view\control\NodeControl.cs" />
+    <Compile Include="app\view\control\NodeLabel.cs" />
+    <Compile Include="app\view\control\NodeProgressBar.cs" />
+    <Compile Include="app\view\control\NodeTextBox.cs" />
     <Compile Include="app\view\DefaultNodeView.cs" />
     <Compile Include="app\view\Form2.cs">
       <SubType>Form</SubType>
@@ -72,6 +78,7 @@
     </Compile>
     <Compile Include="app\view\NodeView.cs" />
     <Compile Include="app\view\NodeViewFactory.cs" />
+    <Compile Include="app\view\TestNodeView.cs" />
     <Compile Include="NodeSearchMenu.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -90,6 +97,7 @@
     <Compile Include="node\SystemNode\FlowControl\LoopNode.cs" />
     <Compile Include="node\Attribute\SystemNodeAttribute.cs" />
     <Compile Include="node\SystemNode\FlowControl\SequenceNode.cs" />
+    <Compile Include="node\TestNode.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PropertyPanel.cs">

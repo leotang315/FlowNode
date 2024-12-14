@@ -16,14 +16,15 @@ namespace FlowNode.app.view
         public bool Visible { get; set; } = true;
         public NodeView ParentNode { get; set; }
 
+        protected NodeControl(NodeView parentNode, string name)
+        {
+            ParentNode = parentNode;
+            Name = name;
+        }
+
         public abstract void Paint(Graphics g);
         public abstract void OnMouseDown(Point location, MouseButtons button);
         public abstract void OnMouseUp(Point location, MouseButtons button);
         public abstract void OnMouseMove(Point location);
-
-        protected NodeControl(string name)
-        {
-            Name = name;
-        }
     }
 }
