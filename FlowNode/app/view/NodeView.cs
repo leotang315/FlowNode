@@ -24,6 +24,7 @@ namespace FlowNode.app.view
         public Dictionary<Pin, Rectangle> PinBounds { get; protected set; }
         public List<NodeControl> Controls { get; protected set; }
         public NodeEditor Parent { get; set; }
+        private NodeControl focusedControl;
 
         public Graphics CreateGraphics()
         {
@@ -211,14 +212,25 @@ namespace FlowNode.app.view
         // 处理鼠标事件
         public virtual bool HandleMouseDown(Point location, MouseButtons button)
         {
+            NodeControl newFocusedControl = null;
             foreach (var control in Controls)
             {
                 if (control.Visible && control.Enabled && control.Bounds.Contains(location))
                 {
+                    newFocusedControl = control;
+                    control.Focus();
                     control.OnMouseDown(location, button);
                     return true;
                 }
             }
+
+            // 处理焦点变化
+            if (focusedControl != newFocusedControl)
+            {
+                focusedControl?.LoseFocus();
+                focusedControl = newFocusedControl;
+            }
+
             return false;
         }
 
@@ -250,23 +262,60 @@ namespace FlowNode.app.view
         // 添加键盘事件处理
         public virtual void HandleKeyPress(KeyPressEventArgs e)
         {
-            foreach (var control in Controls)
+            var focusedControl = Controls.FirstOrDefault(c => 
+                c.Visible && 
+                c.Enabled && 
+                c.IsFocused);
+            if (focusedControl != null)
             {
-                if (control is NodeTextBox textBox && textBox.Visible && textBox.Enabled)
-                {
-                    textBox.HandleKeyPress(e);
-                }
+                focusedControl.OnKeyPress(e);
             }
         }
 
         public virtual void HandleKeyDown(KeyEventArgs e)
         {
-            foreach (var control in Controls)
+            var focusedControl = Controls.FirstOrDefault(c => 
+                c.Visible && 
+                c.Enabled &&
+                c.IsFocused);
+
+            if (focusedControl != null)
             {
-                if (control is NodeTextBox textBox && textBox.Visible && textBox.Enabled)
-                {
-                    textBox.HandleKeyDown(e);
-                }
+                focusedControl.OnKeyDown(e);
+            }
+        }
+
+        public virtual void HandleKeyUp(KeyEventArgs e)
+        {
+            var focusedControl = Controls.FirstOrDefault(c => 
+                c.Visible && 
+                c.Enabled &&
+                c.IsFocused);
+
+            if (focusedControl != null)
+            {
+                focusedControl.OnKeyUp(e);
+            }
+        }
+
+        public virtual void HandleMouseWheel(MouseEventArgs e)
+        {
+            var focusedControl = Controls.FirstOrDefault(c => 
+                c.Visible && 
+                c.Enabled &&
+                c.IsFocused);
+
+            if (focusedControl != null)
+            {
+                focusedControl.OnMouseWheel(e);
+            }
+        }
+
+        public void BringToFront(NodeControl control)
+        {
+            if (Controls.Remove(control))
+            {
+                Controls.Add(control);
             }
         }
     }

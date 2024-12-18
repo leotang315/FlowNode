@@ -9,15 +9,28 @@ namespace FlowNode.app.view
     {
         public List<string> Items { get; private set; }
         public int SelectedIndex { get; set; } = -1;
-        public string SelectedItem => SelectedIndex >= 0 && SelectedIndex < Items.Count ? 
+        public string SelectedItem => SelectedIndex >= 0 && SelectedIndex < Items.Count ?
                                     Items[SelectedIndex] : null;
         public event EventHandler<int> SelectedIndexChanged;
-        
+
         private bool isDropped;
-        private bool isHovered;
         private int hoveredItemIndex = -1;
         private Rectangle dropButtonBounds;
         private Rectangle dropDownBounds;
+        private Rectangle bounds= new Rectangle();
+        public override  Rectangle Bounds
+        {
+            get
+            {
+                return bounds;
+            }
+            set
+            {
+                bounds = value;
+                dropButtonBounds = new Rectangle(Bounds.Right - 17, Bounds.Y + 2, 15, Bounds.Height - 4);
+
+            }
+        }
 
         public NodeComboBox(NodeView parentNode, string name) : base(parentNode, name)
         {
@@ -52,8 +65,6 @@ namespace FlowNode.app.view
             }
 
             // 绘制下拉按钮
-            dropButtonBounds = new Rectangle(Bounds.Right - 17, Bounds.Y + 2,
-                                           15, Bounds.Height - 4);
             using (var brush = new SolidBrush(Color.FromArgb(63, 63, 70)))
             {
                 g.FillRectangle(brush, dropButtonBounds);
@@ -74,9 +85,6 @@ namespace FlowNode.app.view
             // 如果下拉列表展开，绘制下拉列表
             if (isDropped)
             {
-                dropDownBounds = new Rectangle(Bounds.X, Bounds.Bottom,
-                                             Bounds.Width, Items.Count * 20);
-                
                 // 绘制下拉列表背景
                 using (var brush = new SolidBrush(Color.FromArgb(45, 45, 48)))
                 {
@@ -92,9 +100,8 @@ namespace FlowNode.app.view
                 // 绘制项目
                 for (int i = 0; i < Items.Count; i++)
                 {
-                    var itemRect = new Rectangle(dropDownBounds.X, dropDownBounds.Y + i * 20,
-                                               dropDownBounds.Width, 20);
-                    
+                    var itemRect = new Rectangle(dropDownBounds.X, dropDownBounds.Y + i * 20, dropDownBounds.Width, 20);
+
                     // 绘制悬停效果
                     if (i == hoveredItemIndex)
                     {
@@ -119,10 +126,11 @@ namespace FlowNode.app.view
         {
             if (!Enabled || button != MouseButtons.Left) return;
 
-            if (dropButtonBounds.Contains(location) || Bounds.Contains(location))
+            if (dropButtonBounds.Contains(location))
             {
                 isDropped = !isDropped;
-                ParentNode?.Invalidate();
+                UpdateBounds();
+                ParentNode?.BringToFront(this);
             }
             else if (isDropped && dropDownBounds.Contains(location))
             {
@@ -133,17 +141,21 @@ namespace FlowNode.app.view
                     SelectedIndexChanged?.Invoke(this, SelectedIndex);
                 }
                 isDropped = false;
-                ParentNode?.Invalidate();
+                UpdateBounds();
             }
+            base.OnMouseDown(location, button);
         }
 
-        public override void OnMouseUp(Point location, MouseButtons button) { }
+        public override void OnMouseUp(Point location, MouseButtons button)
+        {
+            base.OnMouseUp(location, button);
+        }
 
         public override void OnMouseMove(Point location)
         {
-            bool newHovered = Bounds.Contains(location) || 
+            bool newHovered = Bounds.Contains(location) ||
                              (isDropped && dropDownBounds.Contains(location));
-            
+
             // 计算悬停的项目索引
             if (isDropped && dropDownBounds.Contains(location))
             {
@@ -158,11 +170,22 @@ namespace FlowNode.app.view
                 hoveredItemIndex = -1;
             }
 
-            if (newHovered != isHovered)
+            base.OnMouseMove(location);
+        }
+
+        public void UpdateBounds()
+        {
+            if (isDropped)
             {
-                isHovered = newHovered;
-                ParentNode?.Invalidate();
+                dropDownBounds = new Rectangle(Bounds.X, Bounds.Bottom, Bounds.Width, Items.Count * 20);
+                Bounds = new Rectangle(Bounds.X, Bounds.Y, Bounds.Width, Bounds.Height + dropDownBounds.Height);
+            }
+            else
+            {
+                // 恢复原始 Bounds
+                Bounds = new Rectangle(Bounds.X, Bounds.Y, Bounds.Width, 20);
+                dropDownBounds = Rectangle.Empty; // 清空下拉框边界
             }
         }
     }
-} 
+}

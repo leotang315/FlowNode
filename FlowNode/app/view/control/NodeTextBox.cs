@@ -68,7 +68,8 @@ namespace FlowNode.app.view
         {
             if (!Enabled || button != MouseButtons.Left) return;
             isFocused = true;
-            
+            Focus();
+
             // 计算点击位置对应的文本位置
             float x = location.X - Bounds.X - 3;
             cursorPosition = 0;
@@ -102,48 +103,58 @@ namespace FlowNode.app.view
         public override void OnMouseUp(Point location, MouseButtons button) { }
         public override void OnMouseMove(Point location) { }
 
-        public void HandleKeyPress(KeyPressEventArgs e)
+        public override void OnKeyPress(KeyPressEventArgs e)
         {
-            if (!isFocused || IsReadOnly) return;
+            if (!Enabled || !Visible || !isFocused || IsReadOnly) return;
 
-            if (char.IsControl(e.KeyChar))
-            {
-                if (e.KeyChar == (char)Keys.Back && cursorPosition > 0)
-                {
-                    Text = Text.Remove(cursorPosition - 1, 1);
-                    cursorPosition--;
-                    TextChanged?.Invoke(this, Text);
-                }
-            }
-            else
-            {
-                Text = Text.Insert(cursorPosition, e.KeyChar.ToString());
-                cursorPosition++;
-                TextChanged?.Invoke(this, Text);
-            }
+            // 插入字符
+            Text = Text.Insert(cursorPosition, e.KeyChar.ToString());
+            cursorPosition++;
+            TextChanged?.Invoke(this, Text);
             ParentNode?.Invalidate();
         }
 
-        public void HandleKeyDown(KeyEventArgs e)
+        public override void OnKeyDown(KeyEventArgs e)
         {
-            if (!isFocused) return;
+            if (!Enabled || !Visible || !isFocused || IsReadOnly) return;
 
             switch (e.KeyCode)
             {
+                case Keys.Back:
+                    if (cursorPosition > 0)
+                    {
+                        Text = Text.Remove(cursorPosition - 1, 1);
+                        cursorPosition--;
+                        TextChanged?.Invoke(this, Text);
+                    }
+                    break;
+                case Keys.Delete:
+                    if (cursorPosition < Text.Length)
+                    {
+                        Text = Text.Remove(cursorPosition, 1);
+                        TextChanged?.Invoke(this, Text);
+                    }
+                    break;
                 case Keys.Left:
-                    if (cursorPosition > 0) cursorPosition--;
+                    if (cursorPosition > 0)
+                    {
+                        cursorPosition--;
+                    }
                     break;
                 case Keys.Right:
-                    if (cursorPosition < Text.Length) cursorPosition++;
-                    break;
-                case Keys.Home:
-                    cursorPosition = 0;
-                    break;
-                case Keys.End:
-                    cursorPosition = Text.Length;
+                    if (cursorPosition < Text.Length)
+                    {
+                        cursorPosition++;
+                    }
                     break;
             }
             ParentNode?.Invalidate();
         }
+
+        public override void OnKeyUp(KeyEventArgs e)
+        {
+            // 可以在这里处理按键释放事件
+        }
+
     }
 } 
