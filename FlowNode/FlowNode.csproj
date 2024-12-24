@@ -97,6 +97,8 @@
     <Compile Include="node\SystemNode\FlowControl\LoopNode.cs" />
     <Compile Include="node\Attribute\SystemNodeAttribute.cs" />
     <Compile Include="node\SystemNode\FlowControl\SequenceNode.cs" />
+    <Compile Include="node\SystemNode\GetObjectNode.cs" />
+    <Compile Include="node\SystemNode\SetObjectNode.cs" />
     <Compile Include="node\TestNode.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

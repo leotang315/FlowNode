@@ -12,6 +12,7 @@ namespace FlowNode.node
         private List<INode> nodes = new List<INode>();
         private List<Connector> connectors = new List<Connector>();
         private Stack<INode> executionStack = new Stack<INode>();
+        private Dictionary<string, object> dataObjects = new Dictionary<string, object>();
 
 
 
@@ -192,7 +193,7 @@ namespace FlowNode.node
         }
 
         /// <summary>
-        /// 判断是否存在从当前节点到目标节点的路径
+        /// 判断是否存在从当前节点到目标节点的路��
         /// </summary>
         /// <param name="current"></param>
         /// <param name="target"></param>
@@ -261,6 +262,16 @@ namespace FlowNode.node
                 }
             }
             return entryNodes;
+        }
+
+        public void SetDataObject(string key, object obj)
+        {
+            dataObjects[key] = obj;
+        }
+
+        public object GetDataObject(string key)
+        {
+            return dataObjects.TryGetValue(key, out var obj) ? obj : null;
         }
 
     }

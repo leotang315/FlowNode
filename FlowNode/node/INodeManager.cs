@@ -11,6 +11,8 @@ namespace FlowNode.node
         Connector findConnector(Pin pin);
         void pushNextConnectNode(Pin pin);
         void pushNextNode(INode node);
+        void SetDataObject(string key, object obj);
+        object GetDataObject(string key);
         void run();
     }
 }
