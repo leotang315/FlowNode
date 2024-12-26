@@ -202,7 +202,7 @@ namespace FlowNode.node
         }
 
         /// <summary>
-        /// 判断是否存在从当前节点到目标节点的路��
+        /// 判断是否存在从当前节点到目标节点的路径
         /// </summary>
         /// <param name="current"></param>
         /// <param name="target"></param>
@@ -273,9 +273,9 @@ namespace FlowNode.node
             return entryNodes;
         }
 
-        public void SetDataObject(string key, object obj)
+        public void SetDataObject(string key, object obj, Type type)
         {
-            dataObjects[key] = (obj, obj.GetType());
+            dataObjects[key] = (obj, type);
         }
 
         public object GetDataObject(string key)
@@ -286,6 +286,11 @@ namespace FlowNode.node
         public Type GetDataObjectType(string key)
         {
             return dataObjects.TryGetValue(key, out var obj) ? obj.type : null;
+        }
+
+        public void RemoveDataObject(string key)
+        {
+            dataObjects.Remove(key);
         }
 
     }
