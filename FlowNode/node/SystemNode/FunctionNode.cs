@@ -31,7 +31,13 @@ namespace FlowNode.node
             var parameters = method.GetParameters().ToList();
             foreach (var param in parameters)
             {
-                createPin(param.Name, param.IsOut ? PinDirection.Output : PinDirection.Input, PinType.Data, param.ParameterType, null);
+                createPin(param.Name, 
+                    param.IsOut ? PinDirection.Output : PinDirection.Input, 
+                    PinType.Data, 
+                    param.ParameterType, 
+                    null);
+                    //Activator.CreateInstance(param.ParameterType)
+                    //);
             }
         }
 

@@ -12,7 +12,7 @@ namespace FlowNode.node
         private List<INode> nodes = new List<INode>();
         private List<Connector> connectors = new List<Connector>();
         private Stack<INode> executionStack = new Stack<INode>();
-        private Dictionary<string, object> dataObjects = new Dictionary<string, object>();
+        private Dictionary<string, (object value, Type type)> dataObjects = new Dictionary<string, (object, Type)>();
 
 
 
@@ -49,7 +49,7 @@ namespace FlowNode.node
             {
                 throw new InvalidOperationException("连接器数据引脚和执行引脚不能相连");
             }
-            if (src.pinType== PinType.Data)
+            if (src.pinType == PinType.Data)
             {
                 if (!ValidatePinDataType(src.dataType, dst.dataType))
                 {
@@ -65,11 +65,23 @@ namespace FlowNode.node
             connectors.Remove(connector);
         }
 
+        public void addData(string name,Type type,object value)
+        {
+            dataObjects[name] = (value, type);
+        }
+
+        public void removeData(string name)
+        {
+            dataObjects.Remove(name);
+        }
+
+
         public void clear()
         {
             nodes.Clear();
             connectors.Clear();
             executionStack.Clear();
+            dataObjects.Clear();
         }
 
         public Connector findConnector(Pin pin)
@@ -113,9 +125,6 @@ namespace FlowNode.node
                 {
                     executionStack.Push(node);
                 }
-
-                //// 将所有根节点（没有输入依赖的节点）推入执行堆栈
-                //executionStack.Push(nodes[0]);
 
                 // 依次从堆栈中取出节点并执行
                 while (executionStack.Count > 0)
@@ -266,12 +275,17 @@ namespace FlowNode.node
 
         public void SetDataObject(string key, object obj)
         {
-            dataObjects[key] = obj;
+            dataObjects[key] = (obj, obj.GetType());
         }
 
         public object GetDataObject(string key)
         {
-            return dataObjects.TryGetValue(key, out var obj) ? obj : null;
+            return dataObjects.TryGetValue(key, out var obj) ? obj.value : null;
+        }
+
+        public Type GetDataObjectType(string key)
+        {
+            return dataObjects.TryGetValue(key, out var obj) ? obj.type : null;
         }
 
     }

@@ -1,33 +1,34 @@
 using System;
 using System.Linq;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 namespace FlowNode.node
 {
     public class SetObjectNode : NodeBase
     {
         private string m_objectName;
+        private Type m_objectType;
+        private Pin m_pin_output;
+        private Pin m_pin_value;
 
-        public SetObjectNode(string key)
+        public SetObjectNode(string varName, Type varType)
         {
-            m_objectName = key;
+            m_objectName = varName;
+            m_objectType = varType;
         }
 
         public override void allocateDefaultPins()
         {
             createPin("Input", PinDirection.Input, PinType.Execute);
-            createPin("Output", PinDirection.Output, PinType.Execute);
-            createPin(m_objectName, PinDirection.Input, PinType.Data, typeof(object), null);
+            m_pin_output = createPin("Output", PinDirection.Output, PinType.Execute);
+            m_pin_value = createPin(m_objectName, PinDirection.Input, PinType.Data, m_objectType, null);
         }
 
         public override void excute(INodeManager manager)
         {
-            var valuePin = Pins.FirstOrDefault(p => p.Name == m_objectName);
-            if (valuePin != null)
-            {
-                manager.SetDataObject(m_objectName, valuePin.data);
-            }
+            manager.SetDataObject(m_objectName, m_pin_value.data);
 
             // 执行下一个节点
-            manager.pushNextConnectNode(Pins.FirstOrDefault(p => p.Name == "Output"));
+            manager.pushNextConnectNode(m_pin_output);
         }
     }
-} 
+}

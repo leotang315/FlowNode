@@ -34,51 +34,41 @@ namespace FlowNode.node
         static NodeFactory()
         {
             // 系统节点，使用反射所有具有SystemNode属性的节点
-            var nodeTypes = AppDomain.CurrentDomain.GetAssemblies()
+            var systemNodeTypes = AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(assembly => assembly.GetTypes())
                 .Where(type => type.GetCustomAttributes(typeof(SystemNodeAttribute), false).Any());
 
-            foreach (var type in nodeTypes)
+            foreach (var type in systemNodeTypes)
             {
-                var attribute = (SystemNodeAttribute)type.GetCustomAttributes(typeof(SystemNodeAttribute), false).First();
-                string path = Path.Combine(_systemPath, attribute.Path);
-                
-                _nodeInfos[path] = new NodeInfo
+                var systemAttribute = (SystemNodeAttribute)type.GetCustomAttributes(typeof(SystemNodeAttribute), false).First();
+                NodeInfo nodeInfo = new NodeInfo
                 {
-                    NodeType = type,
-                    SystemNodeAttribute = attribute
+                    SystemNodeAttribute = systemAttribute,
+                    NodeType = type
                 };
+                RegisterNodeInfo(nodeInfo);
             }
 
             // 函数节点，使用反射找出具有Node的节点类,并在其内部具有Function属性的函数
-            var nodes = AppDomain.CurrentDomain.GetAssemblies()
+            var nodeTypes = AppDomain.CurrentDomain.GetAssemblies()
                      .SelectMany(assembly => assembly.GetTypes())
                       .Where(type => type.GetCustomAttributes(typeof(NodeAttribute), false).Any());
-            foreach (var node in nodes)
+            foreach (var type in nodeTypes)
             {
-                var nodeAttribute = (NodeAttribute)node.GetCustomAttribute(typeof(NodeAttribute), false);
-                var methods = node.GetMethods(BindingFlags.Public | BindingFlags.Static)
+                var nodeAttribute = (NodeAttribute)type.GetCustomAttribute(typeof(NodeAttribute), false);
+                var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Static)
                   .Where(method => method.GetCustomAttributes(typeof(FunctionAttribute), false).Any());
-                
+
                 foreach (var method in methods)
                 {
                     var functionAttribute = (FunctionAttribute)method.GetCustomAttributes(typeof(FunctionAttribute), false).First();
-                    string path;
-                    if (string.IsNullOrEmpty(functionAttribute.Name))
+                    NodeInfo nodeInfo = new NodeInfo
                     {
-                        path = Path.Combine(_customerPath, nodeAttribute.Path, method.Name);
-                    }
-                    else
-                    {
-                        path = Path.Combine(_customerPath, nodeAttribute.Path, functionAttribute.Name);
-                    }
-
-                    _nodeInfos[path] = new NodeInfo
-                    {
-                        Method = method,
+                        NodeAttribute = nodeAttribute,
                         FunctionAttribute = functionAttribute,
-                        NodeAttribute = nodeAttribute
+                        Method = method
                     };
+                    RegisterNodeInfo(nodeInfo);
                 }
             }
         }
@@ -120,6 +110,56 @@ namespace FlowNode.node
             return node;
         }
 
+        public static NodeBase CreateVarNode(string varName, Type varType, bool isSet)
+        {
+            NodeBase node = isSet ? (NodeBase)new SetObjectNode(varName, varType) : new GetObjectNode(varName, varType);
+
+            return node;
+        }
+
+        public static void RegisterNodeInfo(NodeInfo nodeInfo)
+        {
+            string path;
+
+            if (nodeInfo.IsSystemNode)
+            {
+                // 系统节点的路径处理
+                if (nodeInfo.SystemNodeAttribute == null)
+                {
+                    throw new ArgumentException("System node must have SystemNodeAttribute");
+                }
+                path = Path.Combine(_systemPath, nodeInfo.SystemNodeAttribute.Path);
+            }
+            else if (nodeInfo.IsFunctionNode)
+            {
+                // 函数节点的路径处理
+                if (nodeInfo.NodeAttribute == null || nodeInfo.FunctionAttribute == null)
+                {
+                    throw new ArgumentException("Function node must have both NodeAttribute and FunctionAttribute");
+                }
+
+                string functionName = string.IsNullOrEmpty(nodeInfo.FunctionAttribute.Name)
+                    ? nodeInfo.Method.Name
+                    : nodeInfo.FunctionAttribute.Name;
+
+                path = Path.Combine(_customerPath, nodeInfo.NodeAttribute.Path, functionName);
+            }
+            else
+            {
+                throw new ArgumentException("Invalid node info type");
+            }
+
+            // 检查路径是否已存在
+            if (_nodeInfos.ContainsKey(path))
+            {
+                throw new ArgumentException($"Node path '{path}' is already registered");
+            }
+
+            // 注册节点信息
+            _nodeInfos[path] = nodeInfo;
+        }
+
+
         // 添加一些辅助方法来获取节点信息
         public static NodeInfo GetNodeInfo(string path)
         {
@@ -140,55 +180,5 @@ namespace FlowNode.node
                             .ToList();
         }
 
-        //// 按类别获取节点路径
-        //public static Dictionary<string, List<string>> GetNodePathsByCategory()
-        //{
-        //    var categories = new Dictionary<string, List<string>>();
-            
-        //    foreach (var pair in _nodeInfos)
-        //    {
-        //        string category;
-        //        if (pair.Value.IsSystemNode)
-        //        {
-        //            category = pair.Value.SystemNodeAttribute.Category ?? "System";
-        //        }
-        //        else
-        //        {
-        //            category = pair.Value.NodeAttribute?.Category ?? "Functions";
-        //        }
-
-        //        if (!categories.ContainsKey(category))
-        //        {
-        //            categories[category] = new List<string>();
-        //        }
-        //        categories[category].Add(pair.Key);
-        //    }
-
-        //    return categories;
-        //}
-
-        public static string GetNodePathFromType(Type nodeType)
-        {
-            // 查找系统节点
-            var systemNodePath = _nodeInfos.FirstOrDefault(x => 
-                x.Value.IsSystemNode && x.Value.NodeType == nodeType);
-            if (!systemNodePath.Equals(default(KeyValuePair<string, NodeInfo>)))
-            {
-                return systemNodePath.Key;
-            }
-
-            // 查找函数节点
-            var functionNodePath = _nodeInfos.FirstOrDefault(x => 
-                x.Value.IsFunctionNode && 
-                (x.Value.Method.DeclaringType == nodeType || 
-                 nodeType.IsSubclassOf(typeof(FunctionNode))));
-            if (!functionNodePath.Equals(default(KeyValuePair<string, NodeInfo>)))
-            {
-                return functionNodePath.Key;
-            }
-
-            // 如果找不到对应的路径，返回类型的全名作为备用
-            return $"/system/{nodeType.Name}";
-        }
     }
 }

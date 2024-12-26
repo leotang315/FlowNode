@@ -5,25 +5,24 @@ namespace FlowNode.node
     public class GetObjectNode : NodeBase
     {
         private string m_objectName;
+        private Type m_objectType;
+        private Pin m_pin_value;
 
-        public GetObjectNode(string key)
+        public GetObjectNode(string varName, Type varType)
         {
-            m_objectName = key;
+            m_objectName = varName;
+            m_objectType = varType;
             IsAutoRun = true;
         }
 
         public override void allocateDefaultPins()
         {
-            createPin(m_objectName, PinDirection.Output, PinType.Data, typeof(object), null);
+            m_pin_value = createPin(m_objectName, PinDirection.Output, PinType.Data, m_objectType, null);
         }
 
         public override void excute(INodeManager manager)
         {
-            var outputPin = Pins.FirstOrDefault(p => p.Name == m_objectName);
-            if (outputPin != null)
-            {
-                outputPin.data = manager.GetDataObject(m_objectName);
-            }
+            m_pin_value.data = manager.GetDataObject(m_objectName);
         }
     }
-} 
+}
