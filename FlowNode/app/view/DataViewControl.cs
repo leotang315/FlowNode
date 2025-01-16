@@ -10,7 +10,7 @@ namespace FlowNode
     {
         private readonly NodeManager nodeManager;
         private readonly CommandManager commandManager;
-        private ListView listView;
+        public ListView listView;
         private Button addButton;
         private Button closeButton;
 
@@ -25,7 +25,7 @@ namespace FlowNode
         private void InitializeComponents()
         {
             Text = "Data Object Manager";
-            Size = new Size(300, 400);
+            Size = new Size(200, 200);
 
             // 创建 TableLayoutPanel
             var tableLayoutPanel = new TableLayoutPanel
@@ -48,7 +48,7 @@ namespace FlowNode
                 Dock = DockStyle.Fill
             };
 
-            listView.Columns.Add("Key", 50);
+            listView.Columns.Add("Name", 50);
             listView.Columns.Add("Value", 100);
             listView.Columns.Add("Type", 50);
 
@@ -100,7 +100,7 @@ namespace FlowNode
 
         private void AddButton_Click(object sender, EventArgs e)
         {
-            using (var form = new DataObjectEditForm())
+            using (var form = new DataEditForm())
             {
                 if (form.ShowDialog() == DialogResult.OK)
                 {
@@ -137,7 +137,7 @@ namespace FlowNode
     }
 
     // 用于添加/编辑数据对象的对话框
-    public class DataObjectEditForm : Form
+    public class DataEditForm : Form
     {
         private TextBox keyTextBox;
         private TextBox valueTextBox;
@@ -149,7 +149,7 @@ namespace FlowNode
         public object ObjectValue => Convert.ChangeType(valueTextBox.Text, ObjectType);
         public Type ObjectType => Type.GetType($"System.{typeComboBox.SelectedItem}");
 
-        public DataObjectEditForm()
+        public DataEditForm()
         {
             InitializeComponents();
         }
@@ -157,20 +157,20 @@ namespace FlowNode
         private void InitializeComponents()
         {
             Text = "Add Data Object";
-            Size = new Size(300, 200);
+            Size = new Size(200, 200);
             StartPosition = FormStartPosition.CenterParent;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
             MinimizeBox = false;
 
-            var keyLabel = new Label { Text = "Key:", Left = 10, Top = 20 };
-            keyTextBox = new TextBox { Left = 100, Top = 20, Width = 180 };
+            var keyLabel = new Label { Text = "Name:", Left = 10, Top = 20, Width=50 };
+            keyTextBox = new TextBox { Left = 70, Top = 20, Width = 100 };
 
-            var valueLabel = new Label { Text = "Value:", Left = 10, Top = 50 };
-            valueTextBox = new TextBox { Left = 100, Top = 50, Width = 180 };
+            var valueLabel = new Label { Text = "Value:", Left = 10, Top = 50, Width = 50 };
+            valueTextBox = new TextBox { Left = 70, Top = 50, Width = 100 };
 
-            var typeLabel = new Label { Text = "Type:", Left = 10, Top = 80 };
-            typeComboBox = new ComboBox { Left = 100, Top = 80, Width = 180 };
+            var typeLabel = new Label { Text = "Type:", Left = 10, Top = 80, Width = 50 };
+            typeComboBox = new ComboBox { Left = 70, Top = 80, Width = 100 };
             typeComboBox.Items.AddRange(new object[] { "String", "Int32", "Double", "Boolean" });
             typeComboBox.SelectedIndex = 0;
 

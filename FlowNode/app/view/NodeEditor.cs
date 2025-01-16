@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using static FlowNode.Form2;
+using static FlowNode.DemoForm;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using FlowNode.app.command;
 using FlowNode.app.serialization;

@@ -23,10 +23,21 @@ namespace FlowNode.app.node
             result =1.0f;
         }
 
-        [Function("", false)]
-        public static void showMessage(int message)
+        [Function("", true)]
+        public static void StringOutPut(out string result)
         {
-           Console.WriteLine(message.ToString());
+            result ="hello";
+        }
+
+        [Function("", true)]
+        public static void StringOutPut2(out string result)
+        {
+            result = "world";
+        }
+        [Function("", false)]
+        public static void showMessage(object message)
+        {
+           Console.WriteLine(message!=null? message.ToString():"null");
         }
     }
 }

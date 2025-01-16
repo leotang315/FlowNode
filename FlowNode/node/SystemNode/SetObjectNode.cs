@@ -12,6 +12,7 @@ namespace FlowNode.node
 
         public SetObjectNode(string varName, Type varType)
         {
+            Name = "Set " + varName;
             m_objectName = varName;
             m_objectType = varType;
         }

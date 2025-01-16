@@ -33,7 +33,7 @@ namespace FlowNode
             // 在应用程序启动时注册
             NodeViewFactory.RegisterNodeView<TestNode, TestNodeView>();
 
-            Application.Run(new Form2());
+            Application.Run(new DemoForm());
 
             // 关闭命令行窗口（可选）
             FreeConsole();

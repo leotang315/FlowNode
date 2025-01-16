@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Xml.Linq;
 namespace FlowNode.node
 {
     public class GetObjectNode : NodeBase
@@ -10,6 +11,7 @@ namespace FlowNode.node
 
         public GetObjectNode(string varName, Type varType)
         {
+            Name="Get "+ varName;
             m_objectName = varName;
             m_objectType = varType;
             IsAutoRun = true;

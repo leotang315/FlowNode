@@ -113,7 +113,7 @@ namespace FlowNode.node
         public static NodeBase CreateVarNode(string varName, Type varType, bool isSet)
         {
             NodeBase node = isSet ? (NodeBase)new SetObjectNode(varName, varType) : new GetObjectNode(varName, varType);
-
+            node.init();
             return node;
         }
 

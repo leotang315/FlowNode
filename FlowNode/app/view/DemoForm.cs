@@ -1,4 +1,5 @@
 ﻿using FlowNode;
+using FlowNode.app.serialization;
 using FlowNode.app.view;
 using FlowNode.node;
 using System;
@@ -11,15 +12,16 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
+
 namespace FlowNode
 {
-    public partial class Form2 : Form
+    public partial class DemoForm : Form
     {
 
         private NodeEditor nodeEditor;
         private TreeView nodeTreeView;
         private VariableListControl variableListControl;
-        public Form2()
+        public DemoForm()
         {
             InitializeComponent();
 
@@ -113,6 +115,7 @@ namespace FlowNode
             {
                 Dock = DockStyle.Left,
                 Width = 200,
+                Height = 200,
                 BackColor = Color.FromArgb(30, 30, 30),
                 ForeColor = Color.White
             };
@@ -152,7 +155,7 @@ namespace FlowNode
 
             // TreeView 只需要 ItemDrag 事件
             nodeTreeView.ItemDrag += NodeTreeView_ItemDrag;
-          //  Controls.Add(nodeTreeView);
+            //  Controls.Add(nodeTreeView);
 
             flowLayoutPanel1.Controls.Add(nodeTreeView);
         }
@@ -169,7 +172,7 @@ namespace FlowNode
             };
 
             // Position the control in the bottom-left corner
-          //  variableListControl.Location = new Point(10, this.ClientSize.Height - variableListControl.Height - 10);
+            //  variableListControl.Location = new Point(10, this.ClientSize.Height - variableListControl.Height - 10);
 
             // this.Controls.Add(variableListControl);
 
@@ -177,7 +180,7 @@ namespace FlowNode
             flowLayoutPanel1.Controls.Add(variableListControl);
 
 
-         
+
         }
 
         private void InitializeNodeEditor()
@@ -197,21 +200,35 @@ namespace FlowNode
         {
             DataViewControl dataView = new DataViewControl(nodeEditor.NodeManager, nodeEditor.CommandManager);
             flowLayoutPanel1.Controls.Add(dataView);
+
+            // Add drag & drop event handlers
+            dataView.listView.ItemDrag += ListView_ItemDrag;
+            //dataView.listView.DragEnter += ListView_DragEnter;
+            //dataView.listView.DragDrop += ListView_DragDrop;
+
         }
 
 
 
         private void NodeTreeView_ItemDrag(object sender, ItemDragEventArgs e)
         {
-            if (e.Item is TreeNode node && node.Tag != null)
+            if (e.Item is TreeNode item && item.Tag != null)
             {
-                DoDragDrop(node.Tag, DragDropEffects.Copy);
+                DoDragDrop(item, DragDropEffects.Copy);
+            }
+        }
+
+        private void ListView_ItemDrag(object sender, ItemDragEventArgs e)
+        {
+            if (e.Item is ListViewItem item)
+            {
+                DoDragDrop(item, DragDropEffects.Copy);
             }
         }
 
         private void NodeEditor_DragEnter(object sender, DragEventArgs e)
         {
-            if (e.Data.GetDataPresent(typeof(string)))
+            if (e.Data.GetDataPresent(typeof(TreeNode)) || e.Data.GetDataPresent(typeof(ListViewItem)))
             {
                 e.Effect = DragDropEffects.Copy;
             }
@@ -219,12 +236,12 @@ namespace FlowNode
 
         private void NodeEditor_DragDrop(object sender, DragEventArgs e)
         {
-            if (e.Data.GetDataPresent(typeof(string)))
+            var clientPoint = nodeEditor.PointToClient(new Point(e.X, e.Y));
+            var location = nodeEditor.ScreenToNode(clientPoint);
+            if (e.Data.GetDataPresent(typeof(TreeNode)))
             {
-                var nodePath = (string)e.Data.GetData(typeof(string));
-                var clientPoint = nodeEditor.PointToClient(new Point(e.X, e.Y));
-                var location = nodeEditor.ScreenToNode(clientPoint);
-
+                var treeNodeItem = (TreeNode)e.Data.GetData(typeof(TreeNode));
+                var nodePath = (string)treeNodeItem.Tag;
                 try
                 {
                     var node = NodeFactory.CreateNode(nodePath);
@@ -235,7 +252,31 @@ namespace FlowNode
                     MessageBox.Show($"Error creating node: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
+
+            if (e.Data.GetDataPresent(typeof(ListViewItem)))
+            {
+                var listViewItem = (ListViewItem)e.Data.GetData(typeof(ListViewItem));
+                try
+                {
+                        DialogResult result = MessageBox.Show(
+                        "Do you want to create a set variable node?\nYes = Write Node, No = Read Node",
+                        "Variable Node Type",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Question);
+                    
+                    bool isSet = (result == DialogResult.Yes);
+                    var node = NodeFactory.CreateVarNode(listViewItem.Text, nodeEditor.NodeManager.GetDataObjectType(listViewItem.Text), isSet);
+                    nodeEditor.AddNode(node, location);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error creating node: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
         }
+
+
+
 
     }
 }
