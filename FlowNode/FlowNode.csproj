@@ -50,6 +50,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="app\command\CommandManager.cs" />
+    <Compile Include="app\command\DataObjectCommands.cs" />
     <Compile Include="app\command\NodeDataCommands.cs" />
     <Compile Include="app\command\NodeViewCommands.cs" />
     <Compile Include="app\node\IntTest.cs" />
@@ -62,6 +63,9 @@
     <Compile Include="app\view\control\NodeLabel.cs" />
     <Compile Include="app\view\control\NodeProgressBar.cs" />
     <Compile Include="app\view\control\NodeTextBox.cs" />
+    <Compile Include="app\view\DataViewControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="app\view\DefaultNodeView.cs" />
     <Compile Include="app\view\Form2.cs">
       <SubType>Form</SubType>
@@ -79,6 +83,9 @@
     <Compile Include="app\view\NodeView.cs" />
     <Compile Include="app\view\NodeViewFactory.cs" />
     <Compile Include="app\view\TestNodeView.cs" />
+    <Compile Include="app\view\VariableListControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="NodeSearchMenu.cs">
       <SubType>Form</SubType>
     </Compile>

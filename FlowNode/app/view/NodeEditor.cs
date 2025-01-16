@@ -47,6 +47,7 @@ namespace FlowNode
 
         // 添加属性以允许外部访问 NodeManager
         public NodeManager NodeManager => nodeManager;
+        public CommandManager CommandManager => commandManager;
 
         public NodeEditor()
         {

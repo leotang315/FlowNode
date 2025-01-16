@@ -25,7 +25,7 @@ namespace FlowNode.node
 
         public override void excute(INodeManager manager)
         {
-            manager.SetDataObject(m_objectName, m_pin_value.data);
+            manager.SetDataObject(m_objectName, m_pin_value.data, m_objectType);
 
             // 执行下一个节点
             manager.pushNextConnectNode(m_pin_output);

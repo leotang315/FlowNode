@@ -65,17 +65,6 @@ namespace FlowNode.node
             connectors.Remove(connector);
         }
 
-        public void addData(string name,Type type,object value)
-        {
-            dataObjects[name] = (value, type);
-        }
-
-        public void removeData(string name)
-        {
-            dataObjects.Remove(name);
-        }
-
-
         public void clear()
         {
             nodes.Clear();
@@ -286,6 +275,10 @@ namespace FlowNode.node
         public Type GetDataObjectType(string key)
         {
             return dataObjects.TryGetValue(key, out var obj) ? obj.type : null;
+        }
+        public List<string>  GetAllDataObjectKeys()
+        {
+           return dataObjects.Keys.ToList();
         }
 
         public void RemoveDataObject(string key)

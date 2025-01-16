@@ -1,4 +1,5 @@
 ﻿using FlowNode;
+using FlowNode.app.view;
 using FlowNode.node;
 using System;
 using System.Collections.Generic;
@@ -14,18 +15,32 @@ namespace FlowNode
 {
     public partial class Form2 : Form
     {
+
         private NodeEditor nodeEditor;
         private TreeView nodeTreeView;
+        private VariableListControl variableListControl;
         public Form2()
         {
             InitializeComponent();
 
+
+
+            InitializeMenu();
+            InitializeNodeEditor();
+            InitializeNodeTreeView();
+            //InitializeVariableListControl();
+
+            InitializeDataView();
+        }
+
+        private void InitializeMenu()
+        {
             // 创建主工具栏
             ToolStrip toolStrip = new ToolStrip();
 
             // 创建文件下拉按钮
             var fileButton = new ToolStripDropDownButton("File");
-            
+
             // 创建保存菜单项
             var saveMenuItem = new ToolStripMenuItem("Save");
             saveMenuItem.Click += (s, e) =>
@@ -90,9 +105,6 @@ namespace FlowNode
             toolStrip.Items.Add(executeButton);
 
             this.Controls.Add(toolStrip);
-
-            InitializeNodeTreeView();
-            InitializeNodeEditor();
         }
 
         private void InitializeNodeTreeView()
@@ -136,11 +148,36 @@ namespace FlowNode
                 }
             }
 
-            nodeTreeView.AfterSelect += NodeTreeView_AfterSelect;
+
 
             // TreeView 只需要 ItemDrag 事件
             nodeTreeView.ItemDrag += NodeTreeView_ItemDrag;
-            Controls.Add(nodeTreeView);
+          //  Controls.Add(nodeTreeView);
+
+            flowLayoutPanel1.Controls.Add(nodeTreeView);
+        }
+
+        private void InitializeVariableListControl()
+        {
+            variableListControl = new VariableListControl
+            {
+                Dock = DockStyle.Left,
+                Width = 200,
+                BackColor = Color.FromArgb(30, 30, 30),
+                ForeColor = Color.White
+                // Anchor = AnchorStyles.Bottom | AnchorStyles.Left
+            };
+
+            // Position the control in the bottom-left corner
+          //  variableListControl.Location = new Point(10, this.ClientSize.Height - variableListControl.Height - 10);
+
+            // this.Controls.Add(variableListControl);
+
+
+            flowLayoutPanel1.Controls.Add(variableListControl);
+
+
+         
         }
 
         private void InitializeNodeEditor()
@@ -156,24 +193,13 @@ namespace FlowNode
             Controls.Add(nodeEditor);
         }
 
-
-        private void NodeTreeView_AfterSelect(object sender, TreeViewEventArgs e)
+        private void InitializeDataView()
         {
-
-            var nodePath = e.Node.Tag as string;
-            if (nodePath != null)
-            {
-                try
-                {
-                    var node = NodeFactory.CreateNode(nodePath);
-                    nodeEditor.AddNode(node, new Point(100, 100));
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Error creating node: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
+            DataViewControl dataView = new DataViewControl(nodeEditor.NodeManager, nodeEditor.CommandManager);
+            flowLayoutPanel1.Controls.Add(dataView);
         }
+
+
 
         private void NodeTreeView_ItemDrag(object sender, ItemDragEventArgs e)
         {
@@ -196,7 +222,7 @@ namespace FlowNode
             if (e.Data.GetDataPresent(typeof(string)))
             {
                 var nodePath = (string)e.Data.GetData(typeof(string));
-                var clientPoint = nodeTreeView.PointToClient(new Point(e.X, e.Y));
+                var clientPoint = nodeEditor.PointToClient(new Point(e.X, e.Y));
                 var location = nodeEditor.ScreenToNode(clientPoint);
 
                 try
@@ -210,5 +236,6 @@ namespace FlowNode
                 }
             }
         }
+
     }
 }
