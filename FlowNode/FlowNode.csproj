@@ -82,6 +82,12 @@
     </Compile>
     <Compile Include="app\view\NodeView.cs" />
     <Compile Include="app\view\NodeViewFactory.cs" />
+    <Compile Include="app\view\states\ConnectingState.cs" />
+    <Compile Include="app\view\states\DraggingNodeState.cs" />
+    <Compile Include="app\view\states\EditorState.cs" />
+    <Compile Include="app\view\states\IdleState.cs" />
+    <Compile Include="app\view\states\PanningState.cs" />
+    <Compile Include="app\view\states\SelectingState.cs" />
     <Compile Include="app\view\TestNodeView.cs" />
     <Compile Include="app\view\VariableListControl.cs">
       <SubType>UserControl</SubType>
