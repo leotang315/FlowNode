@@ -8,8 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using static FlowNode.DemoForm;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using System.Drawing.Drawing2D;
 using FlowNode.app.command;
 using FlowNode.app.serialization;
 using FlowNode.app.view;
@@ -18,36 +17,30 @@ namespace FlowNode
 {
     public partial class NodeEditor : UserControl
     {
-        private NodeManager nodeManager;
-        private Dictionary<INode, NodeView> nodeViews;
+        private NodeManager nodeManager = new NodeManager();
         private CommandManager commandManager = new CommandManager();
+        private Dictionary<INode, NodeView> nodeViews = new Dictionary<INode, NodeView>();
         private NodeSerializationService serializationService;
 
         private Point panOffset;   // 用于画布平移
         private float zoom = 1.0f; // 用于画布缩放
+
         private NodeView selectedNodeView;
         private Connector selectedConnector;
         private Pin selectedPin;
         private Pin hoveredPin;
 
-        private bool isDraggingGraph;  // 指示拖动画布
-        private Point dragGraphStart;  // 用于存储拖动画布开始时鼠标屏幕坐标
+        private bool isDraggingGraph;       // 指示拖动画布操作
+        private Point dragGraphStart;       // 用于存储拖动画布开始时鼠标屏幕坐标
 
-        private bool isDraggingNode;     // 指示拖动
-        private Point dragNodeMouseStart; // 用于存储拖动开始时的鼠标位置
-        private Point dragNodeStart; // 用于存储拖动开始时的节点位置
+        private bool isDraggingNode;        // 指示拖动节点操作
+        private Point dragNodeMouseStart;   // 用于存储拖动开始时的鼠标位置
+        private Point dragNodeStart;        // 用于存储拖动开始时的节点位置
 
 
-        private bool isConnecting;       // 指示
+        private bool isConnecting;          // 指示连接操作
         private Point connectingStart;
         private Point connectingEnd;
-
-
-
-
-        // 添加属性以允许外部访问 NodeManager
-        public NodeManager NodeManager => nodeManager;
-        public CommandManager CommandManager => commandManager;
 
         public NodeEditor()
         {
@@ -56,13 +49,125 @@ namespace FlowNode
                     ControlStyles.OptimizedDoubleBuffer |
                     ControlStyles.UserPaint, true);
 
-            nodeManager = new NodeManager();
-            nodeViews = new Dictionary<INode, NodeView>();
             BackColor = Color.FromArgb(40, 40, 40);
 
             // 启用鼠标滚轮
             this.MouseWheel += NodeEditor_MouseWheel;
-                serializationService = new NodeSerializationService(nodeManager, nodeViews);
+            serializationService = new NodeSerializationService(nodeManager, nodeViews);
+        }
+
+        public NodeManager NodeManager => nodeManager;
+
+        public CommandManager CommandManager => commandManager;
+
+        public void AddNode(NodeBase node, Point location)
+        {
+            var compositeCommand = new CompositeCommand();
+            compositeCommand.AddCommand(new AddNodeDataCommand(nodeManager, node));
+            var nodeView = NodeViewFactory.CreateNodeView(node, location);
+            nodeView.Parent = this;
+            compositeCommand.AddCommand(new AddNodeViewCommand(nodeViews, nodeView, location));
+            commandManager.ExecuteCommand(compositeCommand);
+            Invalidate();
+        }
+
+        public void RemoveNode(NodeBase node)
+        {
+            var compositeCommand = new CompositeCommand();
+            compositeCommand.AddCommand(new RemoveNodeViewCommand(nodeViews, node));
+            compositeCommand.AddCommand(new RemoveNodeDataCommand(nodeManager, node));
+            commandManager.ExecuteCommand(compositeCommand);
+            Invalidate();
+        }
+
+        /// <summary>
+        /// 添加连接器
+        /// </summary>
+        public void AddConnector(Pin sourcePin, Pin targetPin)
+        {
+            var compositeCommand = new CompositeCommand();
+            compositeCommand.AddCommand(new AddConnectorDataCommand(nodeManager, sourcePin, targetPin));
+            commandManager.ExecuteCommand(compositeCommand);
+            Invalidate();
+        }
+
+        /// <summary>
+        /// 移除连接器
+        /// </summary>
+        public void RemoveConnector(Connector connector)
+        {
+            var compositeCommand = new CompositeCommand();
+            compositeCommand.AddCommand(new RemoveConnectorDataCommand(nodeManager, connector));
+            commandManager.ExecuteCommand(compositeCommand);
+            Invalidate();
+        }
+
+        /// <summary>
+        /// 移动节点
+        /// </summary>
+        public void MoveNode(NodeView nodeView, Point oldLocation, Point newLocation)
+        {
+            var compositeCommand = new CompositeCommand();
+            compositeCommand.AddCommand(new MoveNodeViewCommand(nodeView, oldLocation, newLocation));
+            commandManager.ExecuteCommand(compositeCommand);
+            Invalidate();
+        }
+
+        public Point ScreenToNode(Point screenPos)
+        {
+            return new Point(
+                (int)((screenPos.X - panOffset.X) / zoom),
+                (int)((screenPos.Y - panOffset.Y) / zoom)
+            );
+        }
+
+        public void ExecuteFlow()
+        {
+            try
+            {
+                nodeManager.run();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Execution Error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        public void Undo()
+        {
+            commandManager.Undo();
+            Invalidate();
+        }
+
+        public void Redo()
+        {
+            commandManager.Redo();
+            Invalidate();
+        }
+
+        public void SaveToFile(string filePath)
+        {
+            try
+            {
+                serializationService.SaveToFile(filePath);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"保存失败: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        public void LoadFromFile(string filePath)
+        {
+            try
+            {
+                serializationService.LoadFromFile(filePath);
+                Invalidate();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"加载失败: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
 
@@ -107,6 +212,7 @@ namespace FlowNode
             }
             selectedNodeView?.HandleKeyDown(e);
         }
+
         protected override void OnMouseDown(MouseEventArgs e)
         {
             // 确保控件可以接收键盘输入
@@ -236,24 +342,6 @@ namespace FlowNode
             Invalidate();
         }
 
-        private void NodeEditor_MouseWheel(object sender, MouseEventArgs e)
-        {
-            float oldZoom = zoom;
-            if (e.Delta > 0)
-                zoom = Math.Min(zoom * 1.1f, 5.0f);
-            else
-                zoom = Math.Max(zoom / 1.1f, 0.2f);
-
-            // 调整平移以保持鼠标位置不变
-            if (oldZoom != zoom)
-            {
-                Point mousePos = e.Location;
-                panOffset.X = mousePos.X - (int)((mousePos.X - panOffset.X) * (zoom / oldZoom));
-                panOffset.Y = mousePos.Y - (int)((mousePos.Y - panOffset.Y) * (zoom / oldZoom));
-                Invalidate();
-            }
-        }
-
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
@@ -283,6 +371,24 @@ namespace FlowNode
             foreach (var nodeView in nodeViews.Values)
             {
                 DrawNode(g, nodeView);
+            }
+        }
+
+        private void NodeEditor_MouseWheel(object sender, MouseEventArgs e)
+        {
+            float oldZoom = zoom;
+            if (e.Delta > 0)
+                zoom = Math.Min(zoom * 1.1f, 5.0f);
+            else
+                zoom = Math.Max(zoom / 1.1f, 0.2f);
+
+            // 调整平移以保持鼠标位置不变
+            if (oldZoom != zoom)
+            {
+                Point mousePos = e.Location;
+                panOffset.X = mousePos.X - (int)((mousePos.X - panOffset.X) * (zoom / oldZoom));
+                panOffset.Y = mousePos.Y - (int)((mousePos.Y - panOffset.Y) * (zoom / oldZoom));
+                Invalidate();
             }
         }
 
@@ -355,369 +461,248 @@ namespace FlowNode
             }
         }
 
-
-
-
-    
-
-    private void DrawConnector(Graphics g, Connector connector)
-    {
-        if (!nodeViews.TryGetValue(connector.src.host, out NodeView srcView) ||
-            !nodeViews.TryGetValue(connector.dst.host, out NodeView dstView))
-            return;
-
-        if (!srcView.PinBounds.TryGetValue(connector.src, out Rectangle srcPinRect) ||
-            !dstView.PinBounds.TryGetValue(connector.dst, out Rectangle dstPinRect))
-            return;
-
-        Point startPoint = new Point(srcPinRect.Right, srcPinRect.Top + srcPinRect.Height / 2);
-        Point endPoint = new Point(dstPinRect.Left, dstPinRect.Top + dstPinRect.Height / 2);
-
-        Color lineColor = connector.src.pinType == PinType.Execute ?
-            Color.FromArgb(255, 128, 0) : Color.FromArgb(0, 120, 255);
-
-        // 计算贝塞尔曲线的控制点
-        float tangentLength = Math.Min(100, Math.Abs(endPoint.X - startPoint.X) * 0.5f);
-        Point control1 = new Point(startPoint.X + (int)tangentLength, startPoint.Y);
-        Point control2 = new Point(endPoint.X - (int)tangentLength, endPoint.Y);
-
-        // 如果是选中的连接器，先绘制发光效果
-        if (selectedConnector == connector)
+        private void DrawConnector(Graphics g, Connector connector)
         {
-            using (var glowPen = new Pen(Color.FromArgb(100, lineColor), 6))
+            if (!nodeViews.TryGetValue(connector.src.host, out NodeView srcView) ||
+                !nodeViews.TryGetValue(connector.dst.host, out NodeView dstView))
+                return;
+
+            if (!srcView.PinBounds.TryGetValue(connector.src, out Rectangle srcPinRect) ||
+                !dstView.PinBounds.TryGetValue(connector.dst, out Rectangle dstPinRect))
+                return;
+
+            Point startPoint = new Point(srcPinRect.Right, srcPinRect.Top + srcPinRect.Height / 2);
+            Point endPoint = new Point(dstPinRect.Left, dstPinRect.Top + dstPinRect.Height / 2);
+
+            Color lineColor = connector.src.pinType == PinType.Execute ?
+                Color.FromArgb(255, 128, 0) : Color.FromArgb(0, 120, 255);
+
+            // 计算贝塞尔曲线的控制点
+            float tangentLength = Math.Min(100, Math.Abs(endPoint.X - startPoint.X) * 0.5f);
+            Point control1 = new Point(startPoint.X + (int)tangentLength, startPoint.Y);
+            Point control2 = new Point(endPoint.X - (int)tangentLength, endPoint.Y);
+
+            // 如果是选中的连接器，先绘制发光效果
+            if (selectedConnector == connector)
             {
-                g.DrawBezier(glowPen, startPoint, control1, control2, endPoint);
+                using (var glowPen = new Pen(Color.FromArgb(100, lineColor), 6))
+                {
+                    g.DrawBezier(glowPen, startPoint, control1, control2, endPoint);
+                }
+            }
+
+            // 绘制主连接线
+            using (Pen pen = new Pen(lineColor, selectedConnector == connector ? 3 : 2))
+            {
+                g.DrawBezier(pen, startPoint, control1, control2, endPoint);
             }
         }
 
-        // 绘制主连接线
-        using (Pen pen = new Pen(lineColor, selectedConnector == connector ? 3 : 2))
+        private (NodeView nodeView, Pin pin, Connector connector) HitTest(Point location)
         {
-            g.DrawBezier(pen, startPoint, control1, control2, endPoint);
-        }
-    }
-
-    public void AddNode(NodeBase node, Point location)
-    {
-        var compositeCommand = new CompositeCommand();
-        compositeCommand.AddCommand(new AddNodeDataCommand(nodeManager, node));
-        var nodeView = NodeViewFactory.CreateNodeView(node, location);
-        nodeView.Parent = this;
-        compositeCommand.AddCommand(new AddNodeViewCommand(nodeViews, nodeView, location));
-        commandManager.ExecuteCommand(compositeCommand);
-        Invalidate();
-    }
-
-    public void RemoveNode(NodeBase node)
-    {
-        var compositeCommand = new CompositeCommand();
-        compositeCommand.AddCommand(new RemoveNodeViewCommand(nodeViews, node));
-        compositeCommand.AddCommand(new RemoveNodeDataCommand(nodeManager, node));
-        commandManager.ExecuteCommand(compositeCommand);
-        Invalidate();
-    }
-
-    /// <summary>
-    /// 添加连接器
-    /// </summary>
-    public void AddConnector(Pin sourcePin, Pin targetPin)
-    {
-        var compositeCommand = new CompositeCommand();
-        compositeCommand.AddCommand(new AddConnectorDataCommand(nodeManager, sourcePin, targetPin));
-        commandManager.ExecuteCommand(compositeCommand);
-        Invalidate();
-    }
-
-    /// <summary>
-    /// 移除连接器
-    /// </summary>
-    public void RemoveConnector(Connector connector)
-    {
-        var compositeCommand = new CompositeCommand();
-        compositeCommand.AddCommand(new RemoveConnectorDataCommand(nodeManager, connector));
-        commandManager.ExecuteCommand(compositeCommand);
-        Invalidate();
-    }
-
-    /// <summary>
-    /// 移动节点
-    /// </summary>
-    public void MoveNode(NodeView nodeView, Point oldLocation, Point newLocation)
-    {
-        var compositeCommand = new CompositeCommand();
-        compositeCommand.AddCommand(new MoveNodeViewCommand(nodeView, oldLocation, newLocation));
-        commandManager.ExecuteCommand(compositeCommand);
-        Invalidate();
-    }
-
-    public Point ScreenToNode(Point screenPos)
-    {
-        return new Point(
-            (int)((screenPos.X - panOffset.X) / zoom),
-            (int)((screenPos.Y - panOffset.Y) / zoom)
-        );
-    }
-
-    private (NodeView nodeView, Pin pin, Connector connector) HitTest(Point location)
-    {
 
 
-        // 检查节点和引脚
-        foreach (var nodeView in nodeViews.Values)
-        {
-            // 检查是否点击了引脚
-            foreach (var pinPair in nodeView.PinBounds)
+            // 检查节点和引脚
+            foreach (var nodeView in nodeViews.Values)
             {
-                if (pinPair.Value.Contains(location))
-                    return (nodeView, pinPair.Key, null);
+                // 检查是否点击了引脚
+                foreach (var pinPair in nodeView.PinBounds)
+                {
+                    if (pinPair.Value.Contains(location))
+                        return (nodeView, pinPair.Key, null);
+                }
+
+                // 检查是否点击了节点本身
+                if (nodeView.Bounds.Contains(location))
+                    return (nodeView, null, null);
             }
 
-            // 检查是否点击了节点本身
-            if (nodeView.Bounds.Contains(location))
-                return (nodeView, null, null);
-        }
-
-        // 检查是否点击了连接器
-        foreach (var connector in nodeManager.getConnectors())
-        {
-            if (IsPointOnConnector(location, connector))
+            // 检查是否点击了连接器
+            foreach (var connector in nodeManager.getConnectors())
             {
-                return (null, null, connector);
+                if (IsPointOnConnector(location, connector))
+                {
+                    return (null, null, connector);
+                }
             }
+            return (null, null, null);
         }
-        return (null, null, null);
-    }
 
-    private bool IsPointOnConnector(Point point, Connector connector)
-    {
-        if (!nodeViews.TryGetValue(connector.src.host, out NodeView srcView) ||
-            !nodeViews.TryGetValue(connector.dst.host, out NodeView dstView))
+        private bool IsPointOnConnector(Point point, Connector connector)
+        {
+            if (!nodeViews.TryGetValue(connector.src.host, out NodeView srcView) ||
+                !nodeViews.TryGetValue(connector.dst.host, out NodeView dstView))
+                return false;
+
+            if (!srcView.PinBounds.TryGetValue(connector.src, out Rectangle srcPinRect) ||
+                !dstView.PinBounds.TryGetValue(connector.dst, out Rectangle dstPinRect))
+                return false;
+
+            Point startPoint = new Point(srcPinRect.Right, srcPinRect.Top + srcPinRect.Height / 2);
+            Point endPoint = new Point(dstPinRect.Left, dstPinRect.Top + dstPinRect.Height / 2);
+
+            // 计算贝塞尔曲线的控制点
+            float tangentLength = Math.Min(100, Math.Abs(endPoint.X - startPoint.X) * 0.5f);
+            Point control1 = new Point(startPoint.X + (int)tangentLength, startPoint.Y);
+            Point control2 = new Point(endPoint.X - (int)tangentLength, endPoint.Y);
+
+            // 检查点到曲线的距离
+            return IsPointNearBezier(point, startPoint, control1, control2, endPoint, 5);
+        }
+
+        private bool IsPointNearBezier(Point point, Point start, Point control1, Point control2, Point end, float threshold)
+        {
+            // 简化的距离检查：将曲线分成多个线段进行检查
+            const int segments = 20;
+            Point prev = start;
+
+            for (int i = 1; i <= segments; i++)
+            {
+                float t = i / (float)segments;
+                Point current = CalculateBezierPoint(t, start, control1, control2, end);
+
+                // 检查点到线段的距离
+                if (DistanceToLineSegment(point, prev, current) <= threshold)
+                    return true;
+
+                prev = current;
+            }
             return false;
+        }
 
-        if (!srcView.PinBounds.TryGetValue(connector.src, out Rectangle srcPinRect) ||
-            !dstView.PinBounds.TryGetValue(connector.dst, out Rectangle dstPinRect))
-            return false;
-
-        Point startPoint = new Point(srcPinRect.Right, srcPinRect.Top + srcPinRect.Height / 2);
-        Point endPoint = new Point(dstPinRect.Left, dstPinRect.Top + dstPinRect.Height / 2);
-
-        // 计算贝塞尔曲线的控制点
-        float tangentLength = Math.Min(100, Math.Abs(endPoint.X - startPoint.X) * 0.5f);
-        Point control1 = new Point(startPoint.X + (int)tangentLength, startPoint.Y);
-        Point control2 = new Point(endPoint.X - (int)tangentLength, endPoint.Y);
-
-        // 检查点到曲线的距离
-        return IsPointNearBezier(point, startPoint, control1, control2, endPoint, 5);
-    }
-
-    private bool IsPointNearBezier(Point point, Point start, Point control1, Point control2, Point end, float threshold)
-    {
-        // 简化的距离检查：将曲线分成多个线段进行检查
-        const int segments = 20;
-        Point prev = start;
-
-        for (int i = 1; i <= segments; i++)
+        private Point CalculateBezierPoint(float t, Point start, Point control1, Point control2, Point end)
         {
-            float t = i / (float)segments;
-            Point current = CalculateBezierPoint(t, start, control1, control2, end);
+            float u = 1 - t;
+            float tt = t * t;
+            float uu = u * u;
+            float uuu = uu * u;
+            float ttt = tt * t;
 
-            // 检查点到线段的距离
-            if (DistanceToLineSegment(point, prev, current) <= threshold)
+            float x = uuu * start.X +
+                     3 * uu * t * control1.X +
+                     3 * u * tt * control2.X +
+                     ttt * end.X;
+
+            float y = uuu * start.Y +
+                     3 * uu * t * control1.Y +
+                     3 * u * tt * control2.Y +
+                     ttt * end.Y;
+
+            return new Point((int)x, (int)y);
+        }
+
+        private float DistanceToLineSegment(Point point, Point lineStart, Point lineEnd)
+        {
+            float dx = lineEnd.X - lineStart.X;
+            float dy = lineEnd.Y - lineStart.Y;
+
+            if (dx == 0 && dy == 0)
+                return (float)Math.Sqrt(Math.Pow(point.X - lineStart.X, 2) + Math.Pow(point.Y - lineStart.Y, 2));
+
+            float t = ((point.X - lineStart.X) * dx + (point.Y - lineStart.Y) * dy) / (dx * dx + dy * dy);
+            t = Math.Max(0, Math.Min(1, t));
+
+            float projX = lineStart.X + t * dx;
+            float projY = lineStart.Y + t * dy;
+
+            return (float)Math.Sqrt(Math.Pow(point.X - projX, 2) + Math.Pow(point.Y - projY, 2));
+        }
+
+        private bool CanConnect(Pin source, Pin target)
+        {
+            if (source == null || target == null)
+                return false;
+
+            // 检查方向和引脚类型
+            bool basicCheck = source.direction != target.direction && // 方向相反
+                             source.pinType == target.pinType;    // 类型相同
+
+            if (!basicCheck) return false;
+
+            // 如果是执行类型的引脚，不需要检查数据类型
+            if (source.pinType == PinType.Execute)
                 return true;
 
-            prev = current;
-        }
-        return false;
-    }
-
-    private Point CalculateBezierPoint(float t, Point start, Point control1, Point control2, Point end)
-    {
-        float u = 1 - t;
-        float tt = t * t;
-        float uu = u * u;
-        float uuu = uu * u;
-        float ttt = tt * t;
-
-        float x = uuu * start.X +
-                 3 * uu * t * control1.X +
-                 3 * u * tt * control2.X +
-                 ttt * end.X;
-
-        float y = uuu * start.Y +
-                 3 * uu * t * control1.Y +
-                 3 * u * tt * control2.Y +
-                 ttt * end.Y;
-
-        return new Point((int)x, (int)y);
-    }
-
-    private float DistanceToLineSegment(Point point, Point lineStart, Point lineEnd)
-    {
-        float dx = lineEnd.X - lineStart.X;
-        float dy = lineEnd.Y - lineStart.Y;
-
-        if (dx == 0 && dy == 0)
-            return (float)Math.Sqrt(Math.Pow(point.X - lineStart.X, 2) + Math.Pow(point.Y - lineStart.Y, 2));
-
-        float t = ((point.X - lineStart.X) * dx + (point.Y - lineStart.Y) * dy) / (dx * dx + dy * dy);
-        t = Math.Max(0, Math.Min(1, t));
-
-        float projX = lineStart.X + t * dx;
-        float projY = lineStart.Y + t * dy;
-
-        return (float)Math.Sqrt(Math.Pow(point.X - projX, 2) + Math.Pow(point.Y - projY, 2));
-    }
-
-    public void ExecuteFlow()
-    {
-        try
-        {
-            nodeManager.run();
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"Execution Error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
-    }
-
-    private bool CanConnect(Pin source, Pin target)
-    {
-        if (source == null || target == null)
-            return false;
-
-        // 检查方向和引脚类型
-        bool basicCheck = source.direction != target.direction && // 方向相反
-                         source.pinType == target.pinType;    // 类型相同
-
-        if (!basicCheck) return false;
-
-        // 如果是执行类型的引脚，不需要检查数据类型
-        if (source.pinType == PinType.Execute)
-            return true;
-
-        // 确保source是输出引脚，target是输入引脚
-        Pin outputPin, inputPin;
-        if (source.direction == PinDirection.Output)
-        {
-            outputPin = source;
-            inputPin = target;
-        }
-        else
-        {
-            outputPin = target;
-            inputPin = source;
-        }
-        return PinTypeValidator.AreTypesCompatible(outputPin.dataType, inputPin.dataType);
-    }
-
-    // 添加一个辅助方法来创建圆角矩形
-    private System.Drawing.Drawing2D.GraphicsPath CreateRoundedRectangle(Rectangle bounds, int radius)
-    {
-        var path = new System.Drawing.Drawing2D.GraphicsPath();
-
-        // 左上角
-        path.AddArc(bounds.X, bounds.Y, radius * 2, radius * 2, 180, 90);
-        // 右上角
-        path.AddArc(bounds.Right - radius * 2, bounds.Y, radius * 2, radius * 2, 270, 90);
-        // 右下角
-        path.AddArc(bounds.Right - radius * 2, bounds.Bottom - radius * 2, radius * 2, radius * 2, 0, 90);
-        // 左下角
-        path.AddArc(bounds.X, bounds.Bottom - radius * 2, radius * 2, radius * 2, 90, 90);
-
-        path.CloseFigure();
-        return path;
-    }
-
-    // 添加新方法来绘制正在创建的连接线
-    private void DrawConnectingLine(Graphics g)
-    {
-        // 如果没有悬停的引脚，使用鼠标位置作为终点
-        Point endPoint = hoveredPin != null ?
-            GetPinConnectionPoint(hoveredPin) : connectingEnd;
-
-        // 计算贝塞尔曲线的控制点
-        float tangentLength = Math.Min(100, Math.Abs(endPoint.X - connectingStart.X) * 0.5f);
-        Point control1 = new Point(connectingStart.X + (int)tangentLength, connectingStart.Y);
-        Point control2 = new Point(endPoint.X - (int)tangentLength, endPoint.Y);
-
-        // 检查连接兼容性
-        bool isCompatible = hoveredPin != null && CanConnect(selectedPin, hoveredPin);
-
-        // 根据兼容性选择颜色和样式
-        if (hoveredPin != null && !isCompatible)
-        {
-            // 不兼容的连接显示为红色虚线
-            using (var pen = new Pen(Color.Red, 2))
+            // 确保source是输出引脚，target是输入引脚
+            Pin outputPin, inputPin;
+            if (source.direction == PinDirection.Output)
             {
-                pen.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
-                g.DrawBezier(pen, connectingStart, control1, control2, endPoint);
+                outputPin = source;
+                inputPin = target;
+            }
+            else
+            {
+                outputPin = target;
+                inputPin = source;
+            }
+            return PinTypeValidator.AreTypesCompatible(outputPin.dataType, inputPin.dataType);
+        }
+
+        private GraphicsPath CreateRoundedRectangle(Rectangle bounds, int radius)
+        {
+            var path = new System.Drawing.Drawing2D.GraphicsPath();
+
+            // 左上角
+            path.AddArc(bounds.X, bounds.Y, radius * 2, radius * 2, 180, 90);
+            // 右上角
+            path.AddArc(bounds.Right - radius * 2, bounds.Y, radius * 2, radius * 2, 270, 90);
+            // 右下角
+            path.AddArc(bounds.Right - radius * 2, bounds.Bottom - radius * 2, radius * 2, radius * 2, 0, 90);
+            // 左下角
+            path.AddArc(bounds.X, bounds.Bottom - radius * 2, radius * 2, radius * 2, 90, 90);
+
+            path.CloseFigure();
+            return path;
+        }
+
+        private void DrawConnectingLine(Graphics g)
+        {
+            // 如果没有悬停的引脚，使用鼠标位置作为终点
+            Point endPoint = hoveredPin != null ?
+                GetPinConnectionPoint(hoveredPin) : connectingEnd;
+
+            // 计算贝塞尔曲线的控制点
+            float tangentLength = Math.Min(100, Math.Abs(endPoint.X - connectingStart.X) * 0.5f);
+            Point control1 = new Point(connectingStart.X + (int)tangentLength, connectingStart.Y);
+            Point control2 = new Point(endPoint.X - (int)tangentLength, endPoint.Y);
+
+            // 检查连接兼容性
+            bool isCompatible = hoveredPin != null && CanConnect(selectedPin, hoveredPin);
+
+            // 根据兼容性选择颜色和样式
+            if (hoveredPin != null && !isCompatible)
+            {
+                // 不兼容的连接显示为红色虚线
+                using (var pen = new Pen(Color.Red, 2))
+                {
+                    pen.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
+                    g.DrawBezier(pen, connectingStart, control1, control2, endPoint);
+                }
+            }
+            else
+            {
+                // 正常连接显示为白色
+                using (var pen = new Pen(Color.White, 2))
+                {
+                    pen.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
+                    g.DrawBezier(pen, connectingStart, control1, control2, endPoint);
+                }
             }
         }
-        else
+
+        private Point GetPinConnectionPoint(Pin pin)
         {
-            // 正常连接显示为白色
-            using (var pen = new Pen(Color.White, 2))
+            if (nodeViews.TryGetValue(pin.host, out NodeView nodeView) &&
+                nodeView.PinBounds.TryGetValue(pin, out Rectangle pinRect))
             {
-                pen.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
-                g.DrawBezier(pen, connectingStart, control1, control2, endPoint);
+                return new Point(
+                    pin.direction == PinDirection.Input ? pinRect.Left : pinRect.Right,
+                    pinRect.Top + pinRect.Height / 2
+                );
             }
+            return Point.Empty;
         }
     }
-
-    // 添加辅助方法来获取引脚的连接点
-    private Point GetPinConnectionPoint(Pin pin)
-    {
-        if (nodeViews.TryGetValue(pin.host, out NodeView nodeView) &&
-            nodeView.PinBounds.TryGetValue(pin, out Rectangle pinRect))
-        {
-            return new Point(
-                pin.direction == PinDirection.Input ? pinRect.Left : pinRect.Right,
-                pinRect.Top + pinRect.Height / 2
-            );
-        }
-        return Point.Empty;
-    }
-
-    // 添加撤销和重做方法
-    public void Undo()
-    {
-        commandManager.Undo();
-        Invalidate();
-    }
-
-    public void Redo()
-    {
-        commandManager.Redo();
-        Invalidate();
-    }
-
-    public void SaveToFile(string filePath)
-    {
-        try
-        {
-            serializationService.SaveToFile(filePath);
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"保存失败: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
-    }
-
-    public void LoadFromFile(string filePath)
-    {
-        try
-        {
-            serializationService.LoadFromFile(filePath);
-            Invalidate();
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"加载失败: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
-    }
-
-
-}
 
 
 
