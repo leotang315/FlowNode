@@ -15,7 +15,10 @@ namespace FlowNode
         private readonly Point dragStart;
         private readonly Point nodeStart;
         private readonly Dictionary<NodeView, Point> selectedNodesStartPos;
-
+        public override string getName()
+        {
+            return "DraggingNodeState";
+        }
         public DraggingNodeState(NodeEditor editor, NodeView nodeView, Point dragStart) : base(editor)
         {
             this.nodeView = nodeView;

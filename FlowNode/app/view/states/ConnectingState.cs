@@ -11,7 +11,10 @@ namespace FlowNode
         private readonly Point connectingStart;
         private Point connectingEnd;
         private Pin hoveredPin;
-
+        public override string getName()
+        {
+            return "ConnectingState";
+        }
         public ConnectingState(NodeEditor editor, Pin sourcePin) : base(editor)
         {
             this.sourcePin = sourcePin;

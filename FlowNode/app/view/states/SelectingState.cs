@@ -6,12 +6,16 @@ namespace FlowNode
 {
     public class SelectingState : EditorState
     {
-        private readonly Point selectionStart;
+        private readonly Point startPoint;  
         private Point currentPoint;
 
+        public override string getName()
+        {
+            return "SelectingState";
+        }
         public SelectingState(NodeEditor editor, Point start) : base(editor)
         {
-            selectionStart = start;
+            startPoint = start;
             currentPoint = start;
         }
 
@@ -53,10 +57,10 @@ namespace FlowNode
         private Rectangle GetSelectionRect()
         {
             return new Rectangle(
-                Math.Min(selectionStart.X, currentPoint.X),
-                Math.Min(selectionStart.Y, currentPoint.Y),
-                Math.Abs(currentPoint.X - selectionStart.X),
-                Math.Abs(currentPoint.Y - selectionStart.Y)
+                Math.Min(startPoint.X, currentPoint.X),
+                Math.Min(startPoint.Y, currentPoint.Y),
+                Math.Abs(currentPoint.X - startPoint.X),
+                Math.Abs(currentPoint.Y - startPoint.Y)
             );
         }
     }

@@ -7,6 +7,11 @@ namespace FlowNode
     {
         private Point lastMousePos;
 
+        public override string getName()
+        {
+            return "PanningState";
+        }
+
         public PanningState(NodeEditor editor, Point startPos) : base(editor)
         {
             lastMousePos = startPos;

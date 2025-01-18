@@ -196,6 +196,7 @@ namespace FlowNode
         public void ChangeState(EditorState newState)
         {
             currentState = newState;
+            Console.WriteLine(currentState.getName());
             Invalidate();
         }
 
@@ -364,16 +365,27 @@ namespace FlowNode
         private void DrawNode(Graphics g, NodeView nodeView)
         {
             nodeView.Paint(g);
-            // 绘制选中节点的边框
-            if (selectedNodeView == nodeView)
-            {
-                // 选中状态 - 用亮色边框和更粗的线条   // 绘制带圆角的矩形
-                using (var pen = new Pen(Color.FromArgb(0, 120, 215), 2))
-                using (var path = CreateRoundedRectangle(nodeView.Bounds, 3))
-                {
-                    g.DrawPath(pen, path);
-                }
-            }
+            //// 绘制选中节点的边框
+            //if (selectedNodeView == nodeView)
+            //{
+            //    // 选中状态 - 用亮色边框和更粗的线条   // 绘制带圆角的矩形
+            //    using (var pen = new Pen(Color.FromArgb(0, 120, 215), 2))
+            //    using (var path = CreateRoundedRectangle(nodeView.Bounds, 3))
+            //    {
+            //        g.DrawPath(pen, path);
+            //    }
+            //}
+
+            //// 遍历所有选中的节点
+            //foreach (var node in SelectedNodes)
+            //{
+            //    // 绘制选中节点的边框
+            //    using (var pen = new Pen(Color.FromArgb(0, 120, 215), 2))
+            //    using (var path = CreateRoundedRectangle(node.Bounds, 3))
+            //    {
+            //        g.DrawPath(pen, path);
+            //    }
+            //}
 
             //if (isConnecting)
             //{

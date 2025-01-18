@@ -6,6 +6,7 @@ namespace FlowNode
 {
     public abstract class EditorState
     {
+        public abstract string getName();
         protected NodeEditor Editor { get; }
 
         protected EditorState(NodeEditor editor)

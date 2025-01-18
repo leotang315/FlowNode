@@ -8,6 +8,11 @@ namespace FlowNode
     {
         public IdleState(NodeEditor editor) : base(editor) { }
 
+        public override string getName()
+        {
+            return "IdleState";
+        }
+
         public override void OnMouseDown(MouseEventArgs e)
         {
             var mousePos = ScreenToNode(e.Location);
