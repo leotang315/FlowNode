@@ -29,8 +29,8 @@ namespace FlowNode
             if (hoveredPin != pin)
             {
                 hoveredPin = pin;
-                Editor.Invalidate();
             }
+            Editor.Invalidate();
         }
 
         public override void OnMouseUp(MouseEventArgs e)

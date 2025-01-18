@@ -19,9 +19,16 @@ namespace FlowNode
         {
             return "DraggingNodeState";
         }
+
         public DraggingNodeState(NodeEditor editor, NodeView nodeView, Point dragStart) : base(editor)
         {
             this.nodeView = nodeView;
+            // if (!editor.SelectedNodes.Contains(nodeView))
+            // {
+            //     Editor.ClearSelection();
+            //     Editor.AddToSelection(nodeView);
+            // }
+           
             this.dragStart = dragStart;
             this.nodeStart = nodeView.Bounds.Location;
             this.selectedNodesStartPos = editor.SelectedNodes
