@@ -27,10 +27,7 @@ namespace FlowNode
         private Point panOffset;   // 用于画布平移
         private float zoom = 1.0f; // 用于画布缩放
 
-        private NodeView selectedNodeView;
         private Connector selectedConnector;
-
-
         private HashSet<NodeView> selectedNodes = new HashSet<NodeView>();
         public HashSet<NodeView> SelectedNodes => selectedNodes;
 
@@ -204,8 +201,11 @@ namespace FlowNode
         protected override void OnKeyPress(KeyPressEventArgs e)
         {
             base.OnKeyPress(e);
-            selectedNodeView?.HandleKeyPress(e);
             currentState.OnKeyPress(e);
+            foreach (var node in selectedNodes)
+            {
+                node.HandleKeyPress(e);
+            }
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
@@ -238,7 +238,7 @@ namespace FlowNode
             }
 
             // 处理删除选中节点 (Delete)
-            if (e.KeyCode == Keys.Delete && selectedNodeView != null)
+            if (e.KeyCode == Keys.Delete)
             {
                 var compositeCommand = new CompositeCommand();
                 foreach (var nodeView in selectedNodes.ToList())
@@ -248,46 +248,44 @@ namespace FlowNode
                 }
                 commandManager.ExecuteCommand(compositeCommand);
                 selectedNodes.Clear();
-                selectedNodeView = null;
                 Invalidate();
             }
-            selectedNodeView?.HandleKeyDown(e);
+
+            foreach (var node in selectedNodes)
+            {
+                node.HandleKeyDown(e);
+            }
+
         }
 
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
-
-            // 确保控件可以接收键盘输入
-            this.Focus();
-
-            // 先检查是否点击了节点上的控件
-            if (selectedNodeView?.HandleMouseDown(ScreenToNode(e.Location), e.Button) == true)
-            {
-                return;
-            }
-
             currentState.OnMouseDown(e);
+            foreach (var node in selectedNodes)
+            {
+                node.HandleMouseDown(ScreenToNode(e.Location), e.Button);
+            }
         }
 
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
-
-            // 先处理节点控件的鼠标移动
-            selectedNodeView?.HandleMouseMove(ScreenToNode(e.Location));
-
             currentState.OnMouseMove(e);
+            foreach (var node in selectedNodes)
+            {
+                node.HandleMouseMove(ScreenToNode(e.Location));
+            }
         }
 
         protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp(e);
-
-            // 先处理节点控件的鼠标释放
-            selectedNodeView?.HandleMouseUp(ScreenToNode(e.Location), e.Button);
-
             currentState.OnMouseUp(e);
+            foreach (var node in selectedNodes)
+            {
+                node.HandleMouseUp(ScreenToNode(e.Location), e.Button);
+            }
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -671,24 +669,6 @@ namespace FlowNode
                     }
                 }
             }
-        }
-
-        public void SelectNode(NodeView nodeView, bool clearOthers = true)
-        {
-            if (clearOthers)
-            {
-                selectedNodes.Clear();
-            }
-            selectedNodes.Add(nodeView);
-            selectedNodeView = nodeView;
-            Invalidate();
-        }
-
-        public void DeselectAll()
-        {
-            selectedNodes.Clear();
-            selectedNodeView = null;
-            Invalidate();
         }
 
         public void StartConnecting(Pin pin)
