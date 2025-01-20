@@ -20,6 +20,8 @@ namespace FlowNode
 
             if (e.Button == MouseButtons.Left)
             {
+                Editor.SetSelectedConnector(connector);
+
                 if (pin != null)
                 {
                     Editor.ChangeState(new ConnectingState(Editor, pin));

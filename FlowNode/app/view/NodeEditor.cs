@@ -29,8 +29,7 @@ namespace FlowNode
 
         private NodeView selectedNodeView;
         private Connector selectedConnector;
-        private Pin selectedPin;
-        private Pin hoveredPin;
+
 
         private HashSet<NodeView> selectedNodes = new HashSet<NodeView>();
         public HashSet<NodeView> SelectedNodes => selectedNodes;
@@ -641,6 +640,11 @@ namespace FlowNode
         public void RemoveFromSelection(NodeView nodeView)
         {
             selectedNodes.Remove(nodeView);
+        }
+
+        public void SetSelectedConnector(Connector connector)
+        {
+            selectedConnector = connector;
         }
 
         private void DrawConnectors(Graphics g)
