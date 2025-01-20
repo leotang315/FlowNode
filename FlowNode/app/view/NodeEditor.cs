@@ -298,7 +298,7 @@ namespace FlowNode
             g.TranslateTransform(panOffset.X, panOffset.Y);
             g.ScaleTransform(zoom, zoom);
 
-            // 绘制网格
+            // 绘制基础元素
             DrawGrid(g);
             DrawConnectors(g);
             DrawNodes(g);
@@ -359,88 +359,65 @@ namespace FlowNode
             }
         }
 
-        private void DrawNode(Graphics g, NodeView nodeView)
+        private void DrawConnectors(Graphics g)
         {
-            nodeView.Paint(g);
-            //// 绘制选中节点的边框
-            //if (selectedNodeView == nodeView)
-            //{
-            //    // 选中状态 - 用亮色边框和更粗的线条   // 绘制带圆角的矩形
-            //    using (var pen = new Pen(Color.FromArgb(0, 120, 215), 2))
-            //    using (var path = CreateRoundedRectangle(nodeView.Bounds, 3))
-            //    {
-            //        g.DrawPath(pen, path);
-            //    }
-            //}
-
-            //// 遍历所有选中的节点
-            //foreach (var node in SelectedNodes)
-            //{
-            //    // 绘制选中节点的边框
-            //    using (var pen = new Pen(Color.FromArgb(0, 120, 215), 2))
-            //    using (var path = CreateRoundedRectangle(node.Bounds, 3))
-            //    {
-            //        g.DrawPath(pen, path);
-            //    }
-            //}
-
-            //if (isConnecting)
-            //{
-            //    foreach (var pinPair in nodeView.PinBounds)
-            //    {
-            //        var pin = pinPair.Key;
-            //        var bounds = pinPair.Value;
-            //        if (hoveredPin == pin)
-            //        {
-            //            var pinColor = CanConnect(selectedPin, pin) ? Color.FromArgb(0, 120, 215) : Color.FromArgb(255, 0, 0);
-            //            using (var glowBrush = new SolidBrush(Color.FromArgb(100, pinColor)))
-            //            {
-            //                var glowRect = bounds;
-            //                glowRect.Inflate(5, 5);
-            //                g.FillEllipse(glowBrush, glowRect);
-            //            }
-            //        }
-            //    }
-
-            //}
-        }
-
-        private void DrawConnector(Graphics g, Connector connector)
-        {
-            if (!nodeViews.TryGetValue(connector.src.host, out NodeView srcView) ||
-                !nodeViews.TryGetValue(connector.dst.host, out NodeView dstView))
-                return;
-
-            if (!srcView.PinBounds.TryGetValue(connector.src, out Rectangle srcPinRect) ||
-                !dstView.PinBounds.TryGetValue(connector.dst, out Rectangle dstPinRect))
-                return;
-
-            Point startPoint = new Point(srcPinRect.Right, srcPinRect.Top + srcPinRect.Height / 2);
-            Point endPoint = new Point(dstPinRect.Left, dstPinRect.Top + dstPinRect.Height / 2);
-
-            Color lineColor = connector.src.pinType == PinType.Execute ?
-                Color.FromArgb(255, 128, 0) : Color.FromArgb(0, 120, 255);
-
-            // 计算贝塞尔曲线的控制点
-            float tangentLength = Math.Min(100, Math.Abs(endPoint.X - startPoint.X) * 0.5f);
-            Point control1 = new Point(startPoint.X + (int)tangentLength, startPoint.Y);
-            Point control2 = new Point(endPoint.X - (int)tangentLength, endPoint.Y);
-
-            // 如果是选中的连接器，先绘制发光效果
-            if (selectedConnector == connector)
+            foreach (var connector in nodeManager.getConnectors())
             {
-                using (var glowPen = new Pen(Color.FromArgb(100, lineColor), 6))
+                if (!nodeViews.TryGetValue(connector.src.host, out NodeView srcView) ||
+                !nodeViews.TryGetValue(connector.dst.host, out NodeView dstView))
+                    return;
+
+                if (!srcView.PinBounds.TryGetValue(connector.src, out Rectangle srcPinRect) ||
+                    !dstView.PinBounds.TryGetValue(connector.dst, out Rectangle dstPinRect))
+                    return;
+
+                Point startPoint = new Point(srcPinRect.Right, srcPinRect.Top + srcPinRect.Height / 2);
+                Point endPoint = new Point(dstPinRect.Left, dstPinRect.Top + dstPinRect.Height / 2);
+
+                Color lineColor = connector.src.pinType == PinType.Execute ?
+                    Color.FromArgb(255, 128, 0) : Color.FromArgb(0, 120, 255);
+
+                // 计算贝塞尔曲线的控制点
+                float tangentLength = Math.Min(100, Math.Abs(endPoint.X - startPoint.X) * 0.5f);
+                Point control1 = new Point(startPoint.X + (int)tangentLength, startPoint.Y);
+                Point control2 = new Point(endPoint.X - (int)tangentLength, endPoint.Y);
+
+                // 如果是选中的连接器，先绘制发光效果
+                if (selectedConnector == connector)
                 {
-                    g.DrawBezier(glowPen, startPoint, control1, control2, endPoint);
+                    using (var glowPen = new Pen(Color.FromArgb(100, lineColor), 6))
+                    {
+                        g.DrawBezier(glowPen, startPoint, control1, control2, endPoint);
+                    }
+                }
+
+                // 绘制主连接线
+                using (Pen pen = new Pen(lineColor, selectedConnector == connector ? 3 : 2))
+                {
+                    g.DrawBezier(pen, startPoint, control1, control2, endPoint);
                 }
             }
+        }
 
-            // 绘制主连接线
-            using (Pen pen = new Pen(lineColor, selectedConnector == connector ? 3 : 2))
+        private void DrawNodes(Graphics g)
+        {
+            foreach (var nodeView in nodeViews.Values)
             {
-                g.DrawBezier(pen, startPoint, control1, control2, endPoint);
+                nodeView.Paint(g);
+
+                // 绘制选中高亮
+                if (selectedNodes.Contains(nodeView))
+                {
+                    using (var pen = new Pen(Color.FromArgb(0, 120, 215), 2))
+                    using (var path = CreateRoundedRectangle(nodeView.Bounds, 3))
+                    {
+                        g.DrawPath(pen, path);
+                    }
+                }
             }
         }
+
+
 
         private bool IsPointOnConnector(Point point, Connector connector)
         {
@@ -645,31 +622,7 @@ namespace FlowNode
             selectedConnector = connector;
         }
 
-        private void DrawConnectors(Graphics g)
-        {
-            foreach (var connector in nodeManager.getConnectors())
-            {
-                DrawConnector(g, connector);
-            }
-        }
 
-        private void DrawNodes(Graphics g)
-        {
-            foreach (var nodeView in nodeViews.Values)
-            {
-                DrawNode(g, nodeView);
-
-                // 绘制选中高亮
-                if (selectedNodes.Contains(nodeView))
-                {
-                    using (var pen = new Pen(Color.FromArgb(0, 120, 215), 2))
-                    using (var path = CreateRoundedRectangle(nodeView.Bounds, 3))
-                    {
-                        g.DrawPath(pen, path);
-                    }
-                }
-            }
-        }
 
         public void StartConnecting(Pin pin)
         {
