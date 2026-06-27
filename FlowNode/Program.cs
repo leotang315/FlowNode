@@ -23,9 +23,10 @@ namespace FlowNode
         [STAThread]
         static void Main()
         {
-            // 显示命令行窗口
+#if DEBUG
+            // 仅在调试构建下显示命令行窗口，便于查看日志输出
             AllocConsole();
-           // Console.WriteLine("这是一个命令行窗口");
+#endif
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
@@ -35,8 +36,9 @@ namespace FlowNode
 
             Application.Run(new DemoForm());
 
-            // 关闭命令行窗口（可选）
+#if DEBUG
             FreeConsole();
+#endif
         }
     }
 }
