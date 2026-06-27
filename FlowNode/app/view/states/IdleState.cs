@@ -62,9 +62,18 @@ namespace FlowNode
             {
                 Editor.ChangeState(new PanningState(Editor, e.Location));
             }
-            else if (e.Button == MouseButtons.Right && connector != null)
+            else if (e.Button == MouseButtons.Right)
             {
-                Editor.RemoveConnector(connector);
+                if (connector != null)
+                {
+                    Editor.RemoveConnector(connector);
+                }
+                else if (nodeView == null && pin == null)
+                {
+                    // 右键空白处弹出节点搜索菜单，在鼠标所在画布位置创建节点
+                    var menu = new NodeSearchMenu(Editor, Editor.PointToScreen(e.Location), mousePos);
+                    menu.Show();
+                }
             }
         }
     }
