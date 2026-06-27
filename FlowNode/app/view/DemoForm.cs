@@ -23,6 +23,7 @@ namespace FlowNode
         private VariableListControl variableListControl;
         private PropertyPanel propertyPanel;
         private DataViewControl dataView;
+        private TextBox logTextBox;
         private string currentFilePath;
         public DemoForm()
         {
@@ -37,7 +38,39 @@ namespace FlowNode
 
             InitializeDataView();
             InitializePropertyPanel();
+            InitializeLogPanel();
             UpdateTitle();
+        }
+
+        private void InitializeLogPanel()
+        {
+            logTextBox = new TextBox
+            {
+                Dock = DockStyle.Bottom,
+                Height = 120,
+                Multiline = true,
+                ReadOnly = true,
+                ScrollBars = ScrollBars.Vertical,
+                BackColor = Color.FromArgb(25, 25, 25),
+                ForeColor = Color.FromArgb(220, 220, 220),
+                BorderStyle = BorderStyle.FixedSingle
+            };
+            Controls.Add(logTextBox);
+
+            // 保持填充画布在最底层 z-order，确保日志面板停靠在底部、画布填充剩余区域
+            nodeEditor.SendToBack();
+
+            nodeEditor.ExecutionLog += AppendLog;
+        }
+
+        private void AppendLog(string message)
+        {
+            if (logTextBox == null)
+                return;
+
+            logTextBox.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}");
+            // 执行期间界面被同步占用，主动刷新以实时显示
+            logTextBox.Update();
         }
 
         private void InitializeMenu()

@@ -28,6 +28,14 @@ namespace FlowNode
         private float zoom = 1.0f; // 用于画布缩放
 
         private Connector selectedConnector;
+
+        // 执行可视化：当前正在执行的节点，以及每步高亮的停顿时长
+        private INode currentExecutingNode;
+        public int ExecutionStepDelayMs { get; set; } = 200;
+
+        /// <summary>执行过程中的日志消息，供外部日志面板订阅。</summary>
+        public event Action<string> ExecutionLog;
+
         private HashSet<NodeView> selectedNodes = new HashSet<NodeView>();
         public HashSet<NodeView> SelectedNodes => selectedNodes;
 
@@ -168,14 +176,56 @@ namespace FlowNode
 
         public void ExecuteFlow()
         {
+            // 执行前先做图校验，未通过则在日志中列出原因并中止
+            var errors = nodeManager.Validate();
+            if (errors.Count > 0)
+            {
+                foreach (var error in errors)
+                {
+                    ExecutionLog?.Invoke("[校验] " + error);
+                }
+                MessageBox.Show("图校验未通过，无法执行：\n\n" + string.Join("\n", errors),
+                    "无法执行", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            ExecutionLog?.Invoke("=== 开始执行 ===");
+            nodeManager.NodeExecuting += OnNodeExecuting;
+            nodeManager.Log += OnManagerLog;
             try
             {
                 nodeManager.run();
+                ExecutionLog?.Invoke("=== 执行完成 ===");
             }
             catch (Exception ex)
             {
+                ExecutionLog?.Invoke("[错误] " + ex.Message);
                 MessageBox.Show($"Execution Error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+            finally
+            {
+                nodeManager.NodeExecuting -= OnNodeExecuting;
+                nodeManager.Log -= OnManagerLog;
+                currentExecutingNode = null;
+                Invalidate();
+            }
+        }
+
+        private void OnNodeExecuting(INode node)
+        {
+            currentExecutingNode = node;
+            // 立即重绘以呈现高亮，再停顿一小段时间形成单步可视效果
+            Invalidate();
+            Update();
+            if (ExecutionStepDelayMs > 0)
+            {
+                System.Threading.Thread.Sleep(ExecutionStepDelayMs);
+            }
+        }
+
+        private void OnManagerLog(string message)
+        {
+            ExecutionLog?.Invoke(message);
         }
 
         public void Undo()
@@ -467,6 +517,23 @@ namespace FlowNode
             foreach (var nodeView in nodeViews.Values)
             {
                 nodeView.Paint(g);
+
+                // 绘制当前执行节点高亮（绿色发光边框）
+                if (currentExecutingNode != null && nodeView.Node == currentExecutingNode)
+                {
+                    var bounds = nodeView.Bounds;
+                    bounds.Inflate(2, 2);
+                    using (var glowPen = new Pen(Color.FromArgb(120, 0, 230, 80), 6))
+                    using (var glowPath = CreateRoundedRectangle(bounds, 4))
+                    {
+                        g.DrawPath(glowPen, glowPath);
+                    }
+                    using (var pen = new Pen(Color.FromArgb(0, 230, 80), 2))
+                    using (var path = CreateRoundedRectangle(bounds, 4))
+                    {
+                        g.DrawPath(pen, path);
+                    }
+                }
 
                 // 绘制选中高亮
                 if (selectedNodes.Contains(nodeView))

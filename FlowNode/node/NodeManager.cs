@@ -14,6 +14,15 @@ namespace FlowNode.node
         private Stack<INode> executionStack = new Stack<INode>();
         private Dictionary<string, (object value, Type type)> dataObjects = new Dictionary<string, (object, Type)>();
 
+        // 执行步数上限，防止意外死循环把界面卡死
+        private const int MaxExecutionSteps = 1000000;
+
+        /// <summary>每个节点开始执行前触发，供 UI 高亮当前节点。</summary>
+        public event Action<INode> NodeExecuting;
+
+        /// <summary>执行过程中的日志消息，供日志面板显示。</summary>
+        public event Action<string> Log;
+
 
 
         public List<Connector> getConnectors()
@@ -95,19 +104,83 @@ namespace FlowNode.node
             executionStack.Push(node);
         }
 
+        /// <summary>
+        /// 执行前校验图，返回错误列表（为空表示校验通过）。
+        /// </summary>
+        public List<string> Validate()
+        {
+            var errors = new List<string>();
+
+            if (nodes.Count == 0)
+            {
+                errors.Add("图中没有任何节点。");
+                return errors;
+            }
+
+            var entryNodes = FindEntryNodes();
+            if (entryNodes.Count == 0)
+            {
+                errors.Add("没有找到入口节点：所有带执行引脚的节点其输入执行引脚都已被连接（可能存在执行流环）。");
+            }
+
+            if (HasExecuteCycle())
+            {
+                errors.Add("执行流中存在环：节点通过执行引脚相互连接形成闭环，会导致死循环。");
+            }
+
+            return errors;
+        }
+
+        /// <summary>
+        /// 检测执行引脚连接是否形成有向环（循环节点通过运行时重新压栈实现，不会产生连接环，故不会被误报）。
+        /// </summary>
+        private bool HasExecuteCycle()
+        {
+            var visited = new HashSet<INode>();
+            var inStack = new HashSet<INode>();
+            foreach (var node in nodes)
+            {
+                if (ExecuteCycleDfs(node, visited, inStack))
+                    return true;
+            }
+            return false;
+        }
+
+        private bool ExecuteCycleDfs(INode node, HashSet<INode> visited, HashSet<INode> inStack)
+        {
+            if (inStack.Contains(node))
+                return true;
+            if (visited.Contains(node))
+                return false;
+
+            visited.Add(node);
+            inStack.Add(node);
+
+            foreach (var connector in connectors.Where(c => c.src.host == node && c.src.pinType == PinType.Execute))
+            {
+                if (ExecuteCycleDfs(connector.dst.host, visited, inStack))
+                    return true;
+            }
+
+            inStack.Remove(node);
+            return false;
+        }
+
         public void run()
         {
             try
             {
+                var errors = Validate();
+                if (errors.Count > 0)
+                {
+                    throw new InvalidOperationException(string.Join("\n", errors));
+                }
+
                 // 清空执行堆栈
                 executionStack.Clear();
 
                 // 找到所有入口节点
                 var entryNodes = FindEntryNodes();
-                if (entryNodes.Count == 0)
-                {
-                    throw new InvalidOperationException("No entry nodes found in the graph");
-                }
 
                 // 将入口节点按照添加顺序推入堆栈（后添加的先执行）
                 foreach (var node in entryNodes.AsEnumerable().Reverse())
@@ -116,9 +189,17 @@ namespace FlowNode.node
                 }
 
                 // 依次从堆栈中取出节点并执行
+                int steps = 0;
                 while (executionStack.Count > 0)
                 {
+                    if (++steps > MaxExecutionSteps)
+                    {
+                        throw new InvalidOperationException($"执行步数超过上限 {MaxExecutionSteps}，可能存在死循环。");
+                    }
+
                     var node = executionStack.Pop();
+                    NodeExecuting?.Invoke(node);
+                    Log?.Invoke($"执行节点: {node.Name}");
                     node.run(this);
                 }
             }
