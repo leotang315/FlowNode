@@ -33,6 +33,10 @@ namespace FlowNode
         private INode currentExecutingNode;
         public int ExecutionStepDelayMs { get; set; } = 200;
 
+        // 断点集合，以及"从断点继续时跳过一次断点检查"的标记
+        private readonly HashSet<INode> breakpoints = new HashSet<INode>();
+        private bool skipBreakpointOnce;
+
         /// <summary>执行过程中的日志消息，供外部日志面板订阅。</summary>
         public event Action<string> ExecutionLog;
 
@@ -174,8 +178,19 @@ namespace FlowNode
             return (null, null, null);
         }
 
+        /// <summary>
+        /// 运行/继续执行。未在执行时会先校验并开始；已暂停于断点时则继续运行。
+        /// </summary>
         public void ExecuteFlow()
         {
+            if (nodeManager.IsRunning)
+            {
+                // 从断点继续：跳过当前停留的断点节点一次，避免立即再次命中
+                skipBreakpointOnce = true;
+                RunLoop();
+                return;
+            }
+
             // 执行前先做图校验，未通过则在日志中列出原因并中止
             var errors = nodeManager.Validate();
             if (errors.Count > 0)
@@ -189,38 +204,160 @@ namespace FlowNode
                 return;
             }
 
-            ExecutionLog?.Invoke("=== 开始执行 ===");
-            nodeManager.NodeExecuting += OnNodeExecuting;
-            nodeManager.Log += OnManagerLog;
+            AttachExecutionHandlers();
             try
             {
-                nodeManager.run();
-                ExecutionLog?.Invoke("=== 执行完成 ===");
+                nodeManager.BeginRun();
+            }
+            catch (Exception ex)
+            {
+                ExecutionLog?.Invoke("[错误] " + ex.Message);
+                FinishExecution();
+                return;
+            }
+
+            skipBreakpointOnce = false;
+            RunLoop();
+        }
+
+        /// <summary>
+        /// 单步执行：执行下一个节点。未在执行时会先校验并开始（进入暂停/单步模式）。
+        /// </summary>
+        public void StepExecution()
+        {
+            if (!nodeManager.IsRunning)
+            {
+                var errors = nodeManager.Validate();
+                if (errors.Count > 0)
+                {
+                    foreach (var error in errors)
+                    {
+                        ExecutionLog?.Invoke("[校验] " + error);
+                    }
+                    MessageBox.Show("图校验未通过，无法执行：\n\n" + string.Join("\n", errors),
+                        "无法执行", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                AttachExecutionHandlers();
+                try
+                {
+                    nodeManager.BeginRun();
+                }
+                catch (Exception ex)
+                {
+                    ExecutionLog?.Invoke("[错误] " + ex.Message);
+                    FinishExecution();
+                    return;
+                }
+            }
+
+            try
+            {
+                nodeManager.Step();
             }
             catch (Exception ex)
             {
                 ExecutionLog?.Invoke("[错误] " + ex.Message);
                 MessageBox.Show($"Execution Error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                FinishExecution();
+                return;
             }
-            finally
+
+            if (!nodeManager.IsRunning)
             {
-                nodeManager.NodeExecuting -= OnNodeExecuting;
-                nodeManager.Log -= OnManagerLog;
-                currentExecutingNode = null;
+                FinishExecution();
+            }
+            else
+            {
                 Invalidate();
             }
+        }
+
+        /// <summary>主动停止当前执行。</summary>
+        public void StopExecution()
+        {
+            if (!nodeManager.IsRunning)
+                return;
+            nodeManager.StopRun();
+            FinishExecution();
+        }
+
+        private void RunLoop()
+        {
+            try
+            {
+                while (nodeManager.HasMoreSteps)
+                {
+                    var next = nodeManager.PeekNext();
+                    if (!skipBreakpointOnce && breakpoints.Contains(next))
+                    {
+                        // 命中断点：暂停，保留执行状态，等待继续或单步
+                        currentExecutingNode = next;
+                        ExecutionLog?.Invoke($"命中断点: {(next as NodeBase)?.Name}");
+                        Invalidate();
+                        Update();
+                        return;
+                    }
+
+                    skipBreakpointOnce = false;
+                    nodeManager.Step();
+
+                    if (ExecutionStepDelayMs > 0)
+                    {
+                        System.Threading.Thread.Sleep(ExecutionStepDelayMs);
+                    }
+                }
+                FinishExecution();
+            }
+            catch (Exception ex)
+            {
+                ExecutionLog?.Invoke("[错误] " + ex.Message);
+                MessageBox.Show($"Execution Error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                FinishExecution();
+            }
+        }
+
+        private void AttachExecutionHandlers()
+        {
+            nodeManager.NodeExecuting += OnNodeExecuting;
+            nodeManager.Log += OnManagerLog;
+        }
+
+        private void FinishExecution()
+        {
+            nodeManager.NodeExecuting -= OnNodeExecuting;
+            nodeManager.Log -= OnManagerLog;
+            currentExecutingNode = null;
+            skipBreakpointOnce = false;
+            Invalidate();
+        }
+
+        /// <summary>
+        /// 切换某节点的断点状态。
+        /// </summary>
+        public void ToggleBreakpoint(NodeView nodeView)
+        {
+            if (nodeView?.Node == null)
+                return;
+            if (!breakpoints.Remove(nodeView.Node))
+            {
+                breakpoints.Add(nodeView.Node);
+                ExecutionLog?.Invoke($"添加断点: {nodeView.Node.Name}");
+            }
+            else
+            {
+                ExecutionLog?.Invoke($"移除断点: {nodeView.Node.Name}");
+            }
+            Invalidate();
         }
 
         private void OnNodeExecuting(INode node)
         {
             currentExecutingNode = node;
-            // 立即重绘以呈现高亮，再停顿一小段时间形成单步可视效果
+            // 立即重绘以呈现高亮（执行节奏由 RunLoop 控制）
             Invalidate();
             Update();
-            if (ExecutionStepDelayMs > 0)
-            {
-                System.Threading.Thread.Sleep(ExecutionStepDelayMs);
-            }
         }
 
         private void OnManagerLog(string message)
@@ -330,6 +467,17 @@ namespace FlowNode
             if (e.Control && e.KeyCode == Keys.A)
             {
                 SelectAll();
+                e.Handled = true;
+                return;
+            }
+
+            // 切换断点 (F9)：对选中的单个节点
+            if (e.KeyCode == Keys.F9)
+            {
+                if (selectedNodes.Count == 1)
+                {
+                    ToggleBreakpoint(selectedNodes.First());
+                }
                 e.Handled = true;
                 return;
             }
@@ -542,6 +690,19 @@ namespace FlowNode
                     using (var path = CreateRoundedRectangle(nodeView.Bounds, 3))
                     {
                         g.DrawPath(pen, path);
+                    }
+                }
+
+                // 绘制断点标记（左上角红色圆点）
+                if (breakpoints.Contains(nodeView.Node))
+                {
+                    var b = nodeView.Bounds;
+                    var dotRect = new Rectangle(b.Left - 6, b.Top - 6, 12, 12);
+                    using (var brush = new SolidBrush(Color.FromArgb(220, 40, 40)))
+                    using (var pen = new Pen(Color.White, 1))
+                    {
+                        g.FillEllipse(brush, dotRect);
+                        g.DrawEllipse(pen, dotRect);
                     }
                 }
             }

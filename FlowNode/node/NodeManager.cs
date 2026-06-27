@@ -166,47 +166,109 @@ namespace FlowNode.node
             return false;
         }
 
+        private bool isRunning;
+        private int stepCounter;
+
+        /// <summary>是否处于执行（含暂停于断点）状态。</summary>
+        public bool IsRunning => isRunning;
+
+        /// <summary>当前是否还有待执行的节点。</summary>
+        public bool HasMoreSteps => isRunning && executionStack.Count > 0;
+
+        /// <summary>查看下一个将要执行的节点（不出栈），用于断点判断。</summary>
+        public INode PeekNext()
+        {
+            return executionStack.Count > 0 ? executionStack.Peek() : null;
+        }
+
+        /// <summary>
+        /// 开始一次执行：校验、清栈、压入入口节点。需配合 Step() 驱动。
+        /// </summary>
+        public void BeginRun()
+        {
+            var errors = Validate();
+            if (errors.Count > 0)
+            {
+                throw new InvalidOperationException(string.Join("\n", errors));
+            }
+
+            executionStack.Clear();
+            foreach (var node in FindEntryNodes().AsEnumerable().Reverse())
+            {
+                executionStack.Push(node);
+            }
+
+            stepCounter = 0;
+            isRunning = true;
+            Log?.Invoke("=== 开始执行 ===");
+        }
+
+        /// <summary>
+        /// 执行栈顶一个节点。返回 true 表示执行了一个节点，false 表示无可执行节点。
+        /// </summary>
+        public bool Step()
+        {
+            if (!isRunning)
+                return false;
+
+            if (executionStack.Count == 0)
+            {
+                EndRun();
+                return false;
+            }
+
+            if (++stepCounter > MaxExecutionSteps)
+            {
+                executionStack.Clear();
+                EndRun();
+                throw new InvalidOperationException($"执行步数超过上限 {MaxExecutionSteps}，可能存在死循环。");
+            }
+
+            var node = executionStack.Pop();
+            NodeExecuting?.Invoke(node);
+            Log?.Invoke($"执行节点: {node.Name}");
+            node.run(this);
+
+            // 节点执行后若栈空，说明流程自然结束
+            if (executionStack.Count == 0)
+            {
+                EndRun();
+            }
+            return true;
+        }
+
+        /// <summary>主动中止执行。</summary>
+        public void StopRun()
+        {
+            if (!isRunning)
+                return;
+            executionStack.Clear();
+            isRunning = false;
+            Log?.Invoke("=== 执行已停止 ===");
+        }
+
+        private void EndRun()
+        {
+            if (!isRunning)
+                return;
+            isRunning = false;
+            Log?.Invoke("=== 执行完成 ===");
+        }
+
+        /// <summary>
+        /// 一次性执行整个流程（无 UI 分步驱动时使用）。
+        /// </summary>
         public void run()
         {
             try
             {
-                var errors = Validate();
-                if (errors.Count > 0)
-                {
-                    throw new InvalidOperationException(string.Join("\n", errors));
-                }
-
-                // 清空执行堆栈
-                executionStack.Clear();
-
-                // 找到所有入口节点
-                var entryNodes = FindEntryNodes();
-
-                // 将入口节点按照添加顺序推入堆栈（后添加的先执行）
-                foreach (var node in entryNodes.AsEnumerable().Reverse())
-                {
-                    executionStack.Push(node);
-                }
-
-                // 依次从堆栈中取出节点并执行
-                int steps = 0;
-                while (executionStack.Count > 0)
-                {
-                    if (++steps > MaxExecutionSteps)
-                    {
-                        throw new InvalidOperationException($"执行步数超过上限 {MaxExecutionSteps}，可能存在死循环。");
-                    }
-
-                    var node = executionStack.Pop();
-                    NodeExecuting?.Invoke(node);
-                    Log?.Invoke($"执行节点: {node.Name}");
-                    node.run(this);
-                }
+                BeginRun();
+                while (Step()) { }
             }
             catch (Exception ex)
             {
-                // 清空执行堆栈
                 executionStack.Clear();
+                isRunning = false;
                 throw new InvalidOperationException($"Flow execution error: {ex.Message}", ex);
             }
         }

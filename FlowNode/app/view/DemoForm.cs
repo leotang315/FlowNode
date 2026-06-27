@@ -105,10 +105,18 @@ namespace FlowNode
             // 添加分隔符
             toolStrip.Items.Add(new ToolStripSeparator());
 
-            // 添加执行按钮
-            var executeButton = new ToolStripButton("Execute");
+            // 添加执行控制按钮：运行/继续、单步、停止
+            var executeButton = new ToolStripButton("Run/Continue");
             executeButton.Click += (s, e) => nodeEditor.ExecuteFlow();
             toolStrip.Items.Add(executeButton);
+
+            var stepButton = new ToolStripButton("Step");
+            stepButton.Click += (s, e) => nodeEditor.StepExecution();
+            toolStrip.Items.Add(stepButton);
+
+            var stopButton = new ToolStripButton("Stop");
+            stopButton.Click += (s, e) => nodeEditor.StopExecution();
+            toolStrip.Items.Add(stopButton);
 
             this.Controls.Add(toolStrip);
         }
