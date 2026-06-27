@@ -36,6 +36,27 @@ namespace FlowNode
         /// </summary>
         public event Action SelectionChanged;
 
+        // 复制/粘贴使用的内存剪贴板
+        private List<ClipboardNode> clipboardNodes;
+        private List<ClipboardConnector> clipboardConnectors;
+        private int pasteCount;
+
+        private class ClipboardNode
+        {
+            public string NodePath;
+            public string Name;
+            public bool IsAutoRun;
+            public Point Location;
+        }
+
+        private class ClipboardConnector
+        {
+            public int SrcNodeIndex;
+            public string SrcPinName;
+            public int DstNodeIndex;
+            public string DstPinName;
+        }
+
         public NodeEditor()
         {
             InitializeComponent();
@@ -251,6 +272,30 @@ namespace FlowNode
                     commandManager.Redo();
                     Invalidate();
                 }
+                e.Handled = true;
+                return;
+            }
+
+            // 全选 (Ctrl+A)
+            if (e.Control && e.KeyCode == Keys.A)
+            {
+                SelectAll();
+                e.Handled = true;
+                return;
+            }
+
+            // 复制 (Ctrl+C)
+            if (e.Control && e.KeyCode == Keys.C)
+            {
+                CopySelection();
+                e.Handled = true;
+                return;
+            }
+
+            // 粘贴 (Ctrl+V)
+            if (e.Control && e.KeyCode == Keys.V)
+            {
+                PasteClipboard();
                 e.Handled = true;
                 return;
             }
@@ -638,6 +683,140 @@ namespace FlowNode
         {
             if (selectedNodes.Remove(nodeView))
                 SelectionChanged?.Invoke();
+        }
+
+        /// <summary>
+        /// 选中画布中的全部节点。
+        /// </summary>
+        public void SelectAll()
+        {
+            bool changed = false;
+            foreach (var nodeView in nodeViews.Values)
+            {
+                changed |= selectedNodes.Add(nodeView);
+            }
+            if (changed)
+            {
+                SelectionChanged?.Invoke();
+                Invalidate();
+            }
+        }
+
+        /// <summary>
+        /// 复制当前选中的节点及它们之间的内部连线到内存剪贴板。
+        /// </summary>
+        public void CopySelection()
+        {
+            if (selectedNodes.Count == 0)
+                return;
+
+            clipboardNodes = new List<ClipboardNode>();
+            clipboardConnectors = new List<ClipboardConnector>();
+            pasteCount = 0;
+
+            var indexMap = new Dictionary<NodeView, int>();
+            foreach (var nodeView in selectedNodes)
+            {
+                indexMap[nodeView] = clipboardNodes.Count;
+                clipboardNodes.Add(new ClipboardNode
+                {
+                    NodePath = nodeView.Node.NodePath,
+                    Name = nodeView.Node.Name,
+                    IsAutoRun = nodeView.Node.IsAutoRun,
+                    Location = nodeView.Bounds.Location
+                });
+            }
+
+            // 仅复制两端都在选区内的连线
+            var selectedHosts = new HashSet<INode>(selectedNodes.Select(n => n.Node));
+            foreach (var connector in nodeManager.getConnectors())
+            {
+                if (selectedHosts.Contains(connector.src.host) &&
+                    selectedHosts.Contains(connector.dst.host) &&
+                    nodeViews.TryGetValue(connector.src.host, out var srcView) &&
+                    nodeViews.TryGetValue(connector.dst.host, out var dstView))
+                {
+                    clipboardConnectors.Add(new ClipboardConnector
+                    {
+                        SrcNodeIndex = indexMap[srcView],
+                        SrcPinName = connector.src.Name,
+                        DstNodeIndex = indexMap[dstView],
+                        DstPinName = connector.dst.Name
+                    });
+                }
+            }
+        }
+
+        /// <summary>
+        /// 将剪贴板内容粘贴到画布，整体偏移并选中粘贴出的节点，作为一次可撤销操作。
+        /// </summary>
+        public void PasteClipboard()
+        {
+            if (clipboardNodes == null || clipboardNodes.Count == 0)
+                return;
+
+            // 每次粘贴递增偏移，避免与上次粘贴完全重叠
+            pasteCount++;
+            int offset = 30 * pasteCount;
+
+            ClearSelection();
+
+            var createdViews = new NodeView[clipboardNodes.Count];
+            using (commandManager.BeginCommandGroup())
+            {
+                for (int i = 0; i < clipboardNodes.Count; i++)
+                {
+                    var cn = clipboardNodes[i];
+                    if (string.IsNullOrEmpty(cn.NodePath))
+                        continue; // 无法通过路径重建的节点（如变量节点）暂不支持复制
+
+                    NodeBase node;
+                    try
+                    {
+                        node = NodeFactory.CreateNode(cn.NodePath);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"粘贴时创建节点失败 {cn.NodePath}: {ex.Message}");
+                        continue;
+                    }
+
+                    node.Name = cn.Name;
+                    node.IsAutoRun = cn.IsAutoRun;
+
+                    var location = new Point(cn.Location.X + offset, cn.Location.Y + offset);
+                    var nodeView = NodeViewFactory.CreateNodeView(node, location);
+                    nodeView.Parent = this;
+
+                    commandManager.ExecuteCommand(new AddNodeDataCommand(nodeManager, node));
+                    commandManager.ExecuteCommand(new AddNodeViewCommand(nodeViews, nodeView, location));
+
+                    createdViews[i] = nodeView;
+                }
+
+                foreach (var cc in clipboardConnectors)
+                {
+                    var srcView = createdViews[cc.SrcNodeIndex];
+                    var dstView = createdViews[cc.DstNodeIndex];
+                    if (srcView == null || dstView == null)
+                        continue;
+
+                    var srcPin = srcView.Node.findPin(cc.SrcPinName);
+                    var dstPin = dstView.Node.findPin(cc.DstPinName);
+                    if (srcPin != null && dstPin != null)
+                    {
+                        commandManager.ExecuteCommand(new AddConnectorDataCommand(nodeManager, srcPin, dstPin));
+                    }
+                }
+            }
+
+            foreach (var view in createdViews)
+            {
+                if (view != null)
+                    selectedNodes.Add(view);
+            }
+            SelectionChanged?.Invoke();
+            Invalidate();
         }
 
         public void SetSelectedConnector(Connector connector)
