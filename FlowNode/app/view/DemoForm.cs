@@ -21,6 +21,9 @@ namespace FlowNode
         private NodeEditor nodeEditor;
         private TreeView nodeTreeView;
         private VariableListControl variableListControl;
+        private PropertyPanel propertyPanel;
+        private DataViewControl dataView;
+        private string currentFilePath;
         public DemoForm()
         {
             InitializeComponent();
@@ -33,6 +36,8 @@ namespace FlowNode
             //InitializeVariableListControl();
 
             InitializeDataView();
+            InitializePropertyPanel();
+            UpdateTitle();
         }
 
         private void InitializeMenu()
@@ -43,57 +48,23 @@ namespace FlowNode
             // 创建文件下拉按钮
             var fileButton = new ToolStripDropDownButton("File");
 
-            // 创建保存菜单项
-            var saveMenuItem = new ToolStripMenuItem("Save");
-            saveMenuItem.Click += (s, e) =>
-            {
-                using (SaveFileDialog saveDialog = new SaveFileDialog())
-                {
-                    saveDialog.Filter = "XML files (*.xml)|*.xml|All files (*.*)|*.*";
-                    saveDialog.FilterIndex = 1;
-                    saveDialog.RestoreDirectory = true;
+            var newMenuItem = new ToolStripMenuItem("New");
+            newMenuItem.Click += (s, e) => NewFile();
+            fileButton.DropDownItems.Add(newMenuItem);
 
-                    if (saveDialog.ShowDialog() == DialogResult.OK)
-                    {
-                        try
-                        {
-                            nodeEditor.SaveToFile(saveDialog.FileName);
-                            MessageBox.Show("保存成功！", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        }
-                        catch (Exception ex)
-                        {
-                            MessageBox.Show($"保存失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        }
-                    }
-                }
-            };
+            var openMenuItem = new ToolStripMenuItem("Open");
+            openMenuItem.Click += (s, e) => OpenFile();
+            fileButton.DropDownItems.Add(openMenuItem);
+
+            fileButton.DropDownItems.Add(new ToolStripSeparator());
+
+            var saveMenuItem = new ToolStripMenuItem("Save");
+            saveMenuItem.Click += (s, e) => SaveFile();
             fileButton.DropDownItems.Add(saveMenuItem);
 
-            // 创建打开菜单项
-            var openMenuItem = new ToolStripMenuItem("Open");
-            openMenuItem.Click += (s, e) =>
-            {
-                using (OpenFileDialog openDialog = new OpenFileDialog())
-                {
-                    openDialog.Filter = "XML files (*.xml)|*.xml|All files (*.*)|*.*";
-                    openDialog.FilterIndex = 1;
-                    openDialog.RestoreDirectory = true;
-
-                    if (openDialog.ShowDialog() == DialogResult.OK)
-                    {
-                        try
-                        {
-                            nodeEditor.LoadFromFile(openDialog.FileName);
-                            MessageBox.Show("加载成功！", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        }
-                        catch (Exception ex)
-                        {
-                            MessageBox.Show($"加载失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        }
-                    }
-                }
-            };
-            fileButton.DropDownItems.Add(openMenuItem);
+            var saveAsMenuItem = new ToolStripMenuItem("Save As...");
+            saveAsMenuItem.Click += (s, e) => SaveFileAs();
+            fileButton.DropDownItems.Add(saveAsMenuItem);
 
             // 添加文件按钮到工具栏
             toolStrip.Items.Add(fileButton);
@@ -196,9 +167,140 @@ namespace FlowNode
             Controls.Add(nodeEditor);
         }
 
+        private void InitializePropertyPanel()
+        {
+            propertyPanel = new PropertyPanel(nodeEditor)
+            {
+                Dock = DockStyle.Right,
+                Width = 250,
+                BackColor = Color.FromArgb(30, 30, 30)
+            };
+            Controls.Add(propertyPanel);
+
+            // 让填充画布的 nodeEditor 处于 z-order 最底层，这样左/右/顶部停靠控件先占边、画布填充剩余区域
+            nodeEditor.SendToBack();
+
+            // 选中节点变化时刷新属性面板
+            nodeEditor.SelectionChanged += RefreshPropertyPanel;
+        }
+
+        private void RefreshPropertyPanel()
+        {
+            var selected = nodeEditor.SelectedNodes;
+            if (selected.Count == 1)
+            {
+                propertyPanel.ShowProperties(selected.First().Node);
+            }
+            else
+            {
+                propertyPanel.ClearProperties();
+            }
+        }
+
+        private void NewFile()
+        {
+            if (MessageBox.Show("新建将清空当前图，未保存的内容会丢失。是否继续？", "新建",
+                    MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) != DialogResult.OK)
+            {
+                return;
+            }
+
+            nodeEditor.NewGraph();
+            currentFilePath = null;
+            dataView?.RefreshList();
+            propertyPanel?.ClearProperties();
+            UpdateTitle();
+        }
+
+        private void OpenFile()
+        {
+            using (OpenFileDialog openDialog = new OpenFileDialog())
+            {
+                openDialog.Filter = "XML files (*.xml)|*.xml|All files (*.*)|*.*";
+                openDialog.FilterIndex = 1;
+                openDialog.RestoreDirectory = true;
+
+                if (openDialog.ShowDialog() != DialogResult.OK)
+                {
+                    return;
+                }
+
+                try
+                {
+                    nodeEditor.NewGraph();
+                    nodeEditor.LoadFromFile(openDialog.FileName);
+                    currentFilePath = openDialog.FileName;
+                    dataView?.RefreshList();
+                    propertyPanel?.ClearProperties();
+                    UpdateTitle();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"加载失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void SaveFile()
+        {
+            // 已有文件路径则直接保存，否则走另存为
+            if (string.IsNullOrEmpty(currentFilePath))
+            {
+                SaveFileAs();
+                return;
+            }
+
+            try
+            {
+                nodeEditor.SaveToFile(currentFilePath);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"保存失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void SaveFileAs()
+        {
+            using (SaveFileDialog saveDialog = new SaveFileDialog())
+            {
+                saveDialog.Filter = "XML files (*.xml)|*.xml|All files (*.*)|*.*";
+                saveDialog.FilterIndex = 1;
+                saveDialog.RestoreDirectory = true;
+                if (!string.IsNullOrEmpty(currentFilePath))
+                {
+                    saveDialog.FileName = System.IO.Path.GetFileName(currentFilePath);
+                }
+
+                if (saveDialog.ShowDialog() != DialogResult.OK)
+                {
+                    return;
+                }
+
+                try
+                {
+                    nodeEditor.SaveToFile(saveDialog.FileName);
+                    currentFilePath = saveDialog.FileName;
+                    UpdateTitle();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"保存失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void UpdateTitle()
+        {
+            var fileName = string.IsNullOrEmpty(currentFilePath)
+                ? "Untitled"
+                : System.IO.Path.GetFileName(currentFilePath);
+            this.Text = $"FlowNode - {fileName}";
+        }
+
         private void InitializeDataView()
         {
-            DataViewControl dataView = new DataViewControl(nodeEditor.NodeManager, nodeEditor.CommandManager);
+            dataView = new DataViewControl(nodeEditor.NodeManager, nodeEditor.CommandManager);
             flowLayoutPanel1.Controls.Add(dataView);
 
             // Add drag & drop event handlers

@@ -31,6 +31,11 @@ namespace FlowNode
         private HashSet<NodeView> selectedNodes = new HashSet<NodeView>();
         public HashSet<NodeView> SelectedNodes => selectedNodes;
 
+        /// <summary>
+        /// 选中节点集合发生变化时触发，供属性面板等外部 UI 订阅。
+        /// </summary>
+        public event Action SelectionChanged;
+
         public NodeEditor()
         {
             InitializeComponent();
@@ -189,6 +194,19 @@ namespace FlowNode
             }
         }
 
+        /// <summary>
+        /// 清空当前图，回到空白文档状态（节点、连接、全局变量、选中、撤销历史全部清空）。
+        /// </summary>
+        public void NewGraph()
+        {
+            nodeManager.clear();
+            nodeViews.Clear();
+            commandManager.Clear();
+            selectedConnector = null;
+            ClearSelection();
+            Invalidate();
+        }
+
         public void ChangeState(EditorState newState)
         {
             currentState = newState;
@@ -247,7 +265,7 @@ namespace FlowNode
                     compositeCommand.AddCommand(new RemoveNodeDataCommand(nodeManager, nodeView.Node));
                 }
                 commandManager.ExecuteCommand(compositeCommand);
-                selectedNodes.Clear();
+                ClearSelection();
                 Invalidate();
             }
 
@@ -604,17 +622,22 @@ namespace FlowNode
 
         public void ClearSelection()
         {
+            if (selectedNodes.Count == 0)
+                return;
             selectedNodes.Clear();
+            SelectionChanged?.Invoke();
         }
 
         public void AddToSelection(NodeView nodeView)
         {
-            selectedNodes.Add(nodeView);
+            if (selectedNodes.Add(nodeView))
+                SelectionChanged?.Invoke();
         }
 
         public void RemoveFromSelection(NodeView nodeView)
         {
-            selectedNodes.Remove(nodeView);
+            if (selectedNodes.Remove(nodeView))
+                SelectionChanged?.Invoke();
         }
 
         public void SetSelectedConnector(Connector connector)

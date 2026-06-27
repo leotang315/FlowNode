@@ -83,6 +83,14 @@ namespace FlowNode
             Controls.Add(tableLayoutPanel);
         }
 
+        /// <summary>
+        /// 供外部（如新建/打开文件后）刷新数据对象列表。
+        /// </summary>
+        public void RefreshList()
+        {
+            UpdateListView();
+        }
+
         private void UpdateListView()
         {
             listView.Items.Clear();
