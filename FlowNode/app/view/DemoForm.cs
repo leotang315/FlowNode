@@ -258,7 +258,20 @@ namespace FlowNode
             distributeVItem.Click += (s, e) => nodeEditor.DistributeSelectionVertically();
             editButton.DropDownItems.Add(distributeVItem);
 
+            editButton.DropDownItems.Add(new ToolStripSeparator());
+
+            var deleteItem = new ToolStripMenuItem("Delete");
+            deleteItem.ShortcutKeyDisplayString = "Del";
+            deleteItem.Click += (s, e) => nodeEditor.DeleteSelection();
+            editButton.DropDownItems.Add(deleteItem);
+
             toolStrip.Items.Add(editButton);
+
+            var helpButton = new ToolStripDropDownButton("Help");
+            var shortcutsItem = new ToolStripMenuItem("Keyboard Shortcuts...");
+            shortcutsItem.Click += (s, e) => ShowKeyboardShortcutsHelp();
+            helpButton.DropDownItems.Add(shortcutsItem);
+            toolStrip.Items.Add(helpButton);
 
             // 添加分隔符
             toolStrip.Items.Add(new ToolStripSeparator());
@@ -277,6 +290,31 @@ namespace FlowNode
             toolStrip.Items.Add(stopButton);
 
             this.Controls.Add(toolStrip);
+        }
+
+        private static void ShowKeyboardShortcutsHelp()
+        {
+            const string text =
+                "画布编辑\r\n" +
+                "  右键空白          搜索并创建节点\r\n" +
+                "  右键连线          删除连线\r\n" +
+                "  中键拖拽          平移画布\r\n" +
+                "  滚轮              缩放\r\n" +
+                "  Ctrl+A            全选\r\n" +
+                "  Ctrl+C / Ctrl+V   复制 / 粘贴\r\n" +
+                "  Delete            删除选中节点\r\n" +
+                "  F9                切换断点（单选）\r\n" +
+                "\r\n" +
+                "Edit 菜单\r\n" +
+                "  Ctrl+Z / Ctrl+Y   撤销 / 重做\r\n" +
+                "  Ctrl+Shift+L/R/T/B  左/右/上/下对齐\r\n" +
+                "  Ctrl+Shift+H/J    水平 / 垂直等距（≥3 节点）\r\n" +
+                "\r\n" +
+                "View 菜单\r\n" +
+                "  Ctrl+0            适应全部节点\r\n" +
+                "  Ctrl+Shift+0      缩放至选中";
+
+            MessageBox.Show(text, "快捷键", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void InitializeNodeTreeView()

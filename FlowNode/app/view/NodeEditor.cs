@@ -185,6 +185,27 @@ namespace FlowNode
             InvalidateWorldRect(dirty);
         }
 
+        /// <summary>删除当前选中的全部节点（含关联连线），单次 Undo。</summary>
+        public void DeleteSelection()
+        {
+            if (selectedNodes.Count == 0)
+                return;
+
+            var views = selectedNodes.ToList();
+            var dirty = GetNodeViewsDirtyRect(views);
+
+            var compositeCommand = new CompositeCommand();
+            foreach (var nodeView in views)
+            {
+                compositeCommand.AddCommand(new RemoveNodeViewCommand(nodeViews, nodeView.Node));
+                compositeCommand.AddCommand(new RemoveNodeDataCommand(nodeManager, nodeView.Node));
+            }
+
+            commandManager.ExecuteCommand(compositeCommand);
+            ClearSelection();
+            InvalidateWorldRect(dirty);
+        }
+
         public Point ScreenToNode(Point screenPos)
         {
             return new Point(
@@ -795,15 +816,9 @@ namespace FlowNode
             // 处理删除选中节点 (Delete)
             if (e.KeyCode == Keys.Delete)
             {
-                var compositeCommand = new CompositeCommand();
-                foreach (var nodeView in selectedNodes.ToList())
-                {
-                    compositeCommand.AddCommand(new RemoveNodeViewCommand(nodeViews, nodeView.Node));
-                    compositeCommand.AddCommand(new RemoveNodeDataCommand(nodeManager, nodeView.Node));
-                }
-                commandManager.ExecuteCommand(compositeCommand);
-                ClearSelection();
-                Invalidate();
+                DeleteSelection();
+                e.Handled = true;
+                return;
             }
 
             foreach (var node in selectedNodes)

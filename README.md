@@ -4,13 +4,17 @@
 
 ## 功能特性
 
-- 可视化画布：拖拽建节点、贝塞尔连线、缩放、平移、框选
-- 撤销 / 重做（命令模式）
+- 可视化画布：拖拽建节点、贝塞尔连线、缩放、平移、框选、右键搜索建节点
+- 撤销 / 重做（命令模式）；属性与 Pin 修改可 Undo
+- 复制 / 粘贴（含变量 Get/Set 节点元数据）；多选对齐与等距
 - 双轨 Pin 系统：Execute（控制流）+ Data（数据流）
-- 内置系统节点：Sequence / Branch / Loop / Function / Get-Set 全局变量
-- 通过特性（Attribute）+ 反射注册自定义节点与函数
-- 栈式执行引擎，支持顺序、分支、循环
-- 节点图的 XML 序列化保存 / 加载
+- 内置系统节点：Sequence / Branch / Loop / 常量 / Print / Delay / Comment 等
+- 反射注册函数节点与自定义系统节点；Get/Set 全局变量
+- 栈式执行引擎：校验、高亮、断点（F9）、单步 / 继续 / 停止、日志面板
+- XML 存盘：节点、连线、布局、引脚默认值、变量节点、全局变量取值
+- 未保存提示（标题栏 `*`）；Undo 回到已保存状态时自动清除 dirty
+
+完整快捷键见应用内 **Help → Keyboard Shortcuts**。
 
 ## 环境要求
 
@@ -38,7 +42,34 @@ msbuild FlowNode.sln /p:Configuration=Release
 powershell -ExecutionPolicy Bypass -File scripts/run-tests.ps1
 ```
 
-脚本使用 Visual Studio 自带的 MSBuild 构建（以正确处理 .NET Framework 的 `.resx`），并通过工程内置的轻量 runner 执行用例（规避旧版 NUnit3 引擎在本机枚举 .NET 7 运行时目录时的已知崩溃），全部通过时退出码为 0。
+脚本使用 Visual Studio 自带的 MSBuild 构建（以正确处理 .NET Framework 的 `.resx`），并通过工程内置的轻量 runner 执行用例（规避旧版 NUnit3 引擎在本机枚举 .NET 7 运行时目录时的已知崩溃），全部通过时退出码为 0。当前 **118** 个用例。
+
+## 快捷键（摘要）
+
+| 操作 | 快捷键 |
+|------|--------|
+| 撤销 / 重做 | Ctrl+Z / Ctrl+Y |
+| 全选 / 复制 / 粘贴 | Ctrl+A / Ctrl+C / Ctrl+V |
+| 删除选中节点 | Delete |
+| 对齐（左/右/上/下） | Ctrl+Shift+L / R / T / B |
+| 等距（水平/垂直，≥3 节点） | Ctrl+Shift+H / J |
+| 适应全部 / 缩放至选中 | Ctrl+0 / Ctrl+Shift+0 |
+| 断点（单选节点） | F9 |
+
+画布：右键空白建节点、右键连线删除、中键平移、滚轮缩放。详见 **Help → Keyboard Shortcuts**。
+
+## XML 文件格式
+
+Save / Save As 输出 `NodeGraphData` 的 XML（`XmlSerializer`），根元素下主要包含：
+
+| 区块 | 内容 |
+|------|------|
+| `Nodes` | 节点：`NodePath`、属性、`Pins` 默认值；Get/Set 变量节点含 `VarName` / `VarTypeName` / `VarIsSet` |
+| `Connectors` | 连线：源/目标节点 Id 与引脚名 |
+| `ViewData` | 节点在画布上的位置与大小 |
+| `DataObjects` | 全局变量名、类型（`TypeName`）、当前值 |
+
+旧文件若无 `DataObjects` 仍可加载；加载时会清空当前图再恢复。类型名使用 `AssemblyQualifiedName` / `FullName`，数值用 `InvariantCulture` 字符串存储。
 
 ## 项目结构
 
