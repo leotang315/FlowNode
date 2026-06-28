@@ -13,6 +13,7 @@ namespace FlowNode
         private Point connectingEnd;
         private Pin hoveredPin;
         private string hoverError;
+        private RectangleF lastPreviewDirty;
 
         public override string getName()
         {
@@ -22,7 +23,7 @@ namespace FlowNode
         public ConnectingState(NodeEditor editor, Pin sourcePin) : base(editor)
         {
             this.sourcePin = sourcePin;
-            this.connectingStart = GetPinConnectionPoint(sourcePin);
+            this.connectingStart = Editor.GetPinConnectionPoint(sourcePin);
             this.connectingEnd = connectingStart;
         }
 
@@ -37,7 +38,12 @@ namespace FlowNode
                 PinTypeValidator.CanConnect(sourcePin, hoveredPin, out hoverError);
             }
 
-            Editor.Invalidate();
+            var previewDirty = ComputePreviewDirty();
+            if (lastPreviewDirty.Width > 0 && lastPreviewDirty.Height > 0)
+                previewDirty = EditorViewport.Union(previewDirty, lastPreviewDirty);
+
+            Editor.InvalidateWorldRect(previewDirty);
+            lastPreviewDirty = previewDirty;
         }
 
         public override void OnMouseUp(MouseEventArgs e)
@@ -53,7 +59,12 @@ namespace FlowNode
                 else
                 {
                     Editor.LogEditorMessage("[连线] " + error);
+                    Editor.InvalidateWorldRect(lastPreviewDirty);
                 }
+            }
+            else
+            {
+                Editor.InvalidateWorldRect(lastPreviewDirty);
             }
 
             Editor.ChangeState(new IdleState(Editor));
@@ -62,7 +73,7 @@ namespace FlowNode
         public override void OnPaint(Graphics g)
         {
             Point endPoint = hoveredPin != null ?
-                GetPinConnectionPoint(hoveredPin) : connectingEnd;
+                Editor.GetPinConnectionPoint(hoveredPin) : connectingEnd;
 
             float tangentLength = Math.Min(100, Math.Abs(endPoint.X - connectingStart.X) * 0.5f);
             Point control1 = new Point(connectingStart.X + (int)tangentLength, connectingStart.Y);
@@ -111,18 +122,28 @@ namespace FlowNode
             }
         }
 
-        private Point GetPinConnectionPoint(Pin pin)
+        private RectangleF ComputePreviewDirty()
         {
-            if (Editor.NodeViews.TryGetValue(pin.host, out NodeView nodeView) &&
-                nodeView.PinBounds.TryGetValue(pin, out Rectangle pinRect))
+            Point endPoint = hoveredPin != null ?
+                Editor.GetPinConnectionPoint(hoveredPin) : connectingEnd;
+
+            var dirty = EditorViewport.GetConnectorWorldBounds(connectingStart, endPoint);
+
+            if (hoveredPin != null && Editor.NodeViews.TryGetValue(hoveredPin.host, out NodeView nodeView) &&
+                nodeView.PinBounds.TryGetValue(hoveredPin, out Rectangle pinRect))
             {
-                return new Point(
-                    pin.direction == PinDirection.Input ? pinRect.Left : pinRect.Right,
-                    pinRect.Top + pinRect.Height / 2
-                );
+                var glowRect = pinRect;
+                glowRect.Inflate(8, 8);
+                dirty = EditorViewport.Union(dirty, glowRect);
             }
 
-            return Point.Empty;
+            if (!string.IsNullOrEmpty(hoverError))
+            {
+                var labelRect = new RectangleF(endPoint.X + 8, endPoint.Y + 8, 240, 24);
+                dirty = EditorViewport.Union(dirty, labelRect);
+            }
+
+            return dirty;
         }
     }
 }

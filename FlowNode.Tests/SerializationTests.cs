@@ -207,5 +207,21 @@ namespace FlowNode.Tests
 
             Assert.AreEqual(fp1, fp2, "相同图内容指纹应一致");
         }
+
+        [Test]
+        public void ComputeContentFingerprint_ChangesWhenGraphChanges()
+        {
+            var svc = NewService(out var mgr);
+
+            var addPath = NodeFactory.GetFunctionNodePaths().First(p => p.EndsWith("add"));
+            var add = NodeFactory.CreateNode(addPath);
+            mgr.addNode(add);
+
+            var before = svc.ComputeContentFingerprint();
+            mgr.SetDataObject("counter", 1, typeof(int));
+            var after = svc.ComputeContentFingerprint();
+
+            Assert.AreNotEqual(before, after, "修改全局变量后指纹应变化");
+        }
     }
 }

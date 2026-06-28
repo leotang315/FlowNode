@@ -37,6 +37,9 @@ namespace FlowNode
 
         public override void OnMouseMove(MouseEventArgs e)
         {
+            var views = selectedNodesStartPos.Keys.ToList();
+            var dirty = Editor.GetNodeViewsDirtyRect(views);
+
             var mousePos = ScreenToNode(e.Location);
             var dx = mousePos.X - dragStart.X;
             var dy = mousePos.Y - dragStart.Y;
@@ -51,7 +54,9 @@ namespace FlowNode
                     pair.Key.Bounds.Height
                 );
             }
-            Editor.Invalidate();
+
+            dirty = EditorViewport.Union(dirty, Editor.GetNodeViewsDirtyRect(views));
+            Editor.InvalidateWorldRect(dirty);
         }
 
         public override void OnMouseUp(MouseEventArgs e)

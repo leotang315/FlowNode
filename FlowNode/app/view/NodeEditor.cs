@@ -112,16 +112,21 @@ namespace FlowNode
             nodeView.Parent = this;
             compositeCommand.AddCommand(new AddNodeViewCommand(nodeViews, nodeView, location));
             commandManager.ExecuteCommand(compositeCommand);
-            Invalidate();
+            if (nodeViews.TryGetValue(node, out var view))
+                InvalidateNodeViewsWithConnectors(new[] { view });
+            else
+                Invalidate();
         }
 
         public void RemoveNode(NodeBase node)
         {
+            if (nodeViews.TryGetValue(node, out var view))
+                InvalidateNodeViewsWithConnectors(new[] { view });
+
             var compositeCommand = new CompositeCommand();
             compositeCommand.AddCommand(new RemoveNodeViewCommand(nodeViews, node));
             compositeCommand.AddCommand(new RemoveNodeDataCommand(nodeManager, node));
             commandManager.ExecuteCommand(compositeCommand);
-            Invalidate();
         }
 
         /// <summary>
@@ -132,7 +137,16 @@ namespace FlowNode
             var compositeCommand = new CompositeCommand();
             compositeCommand.AddCommand(new AddConnectorDataCommand(nodeManager, sourcePin, targetPin));
             commandManager.ExecuteCommand(compositeCommand);
-            Invalidate();
+
+            var dirty = RectangleF.Empty;
+            if (nodeViews.TryGetValue(sourcePin.host, out var srcView))
+                dirty = EditorViewport.Union(dirty, GetNodeViewsDirtyRect(new[] { srcView }));
+            if (nodeViews.TryGetValue(targetPin.host, out var dstView))
+                dirty = EditorViewport.Union(dirty, GetNodeViewsDirtyRect(new[] { dstView }));
+            if (dirty.Width <= 0 || dirty.Height <= 0)
+                Invalidate();
+            else
+                InvalidateWorldRect(dirty);
         }
 
         /// <summary>
@@ -140,10 +154,20 @@ namespace FlowNode
         /// </summary>
         public void RemoveConnector(Connector connector)
         {
+            var dirty = RectangleF.Empty;
+            if (nodeViews.TryGetValue(connector.src.host, out var srcView))
+                dirty = EditorViewport.Union(dirty, GetNodeViewsDirtyRect(new[] { srcView }));
+            if (nodeViews.TryGetValue(connector.dst.host, out var dstView))
+                dirty = EditorViewport.Union(dirty, GetNodeViewsDirtyRect(new[] { dstView }));
+
             var compositeCommand = new CompositeCommand();
             compositeCommand.AddCommand(new RemoveConnectorDataCommand(nodeManager, connector));
             commandManager.ExecuteCommand(compositeCommand);
-            Invalidate();
+
+            if (dirty.Width <= 0 || dirty.Height <= 0)
+                Invalidate();
+            else
+                InvalidateWorldRect(dirty);
         }
 
         /// <summary>
@@ -151,10 +175,14 @@ namespace FlowNode
         /// </summary>
         public void MoveNode(NodeView nodeView, Point oldLocation, Point newLocation)
         {
+            var dirty = GetNodeViewsDirtyRect(new[] { nodeView });
+
             var compositeCommand = new CompositeCommand();
             compositeCommand.AddCommand(new MoveNodeViewCommand(nodeView, oldLocation, newLocation));
             commandManager.ExecuteCommand(compositeCommand);
-            Invalidate();
+
+            dirty = EditorViewport.Union(dirty, GetNodeViewsDirtyRect(new[] { nodeView }));
+            InvalidateWorldRect(dirty);
         }
 
         public Point ScreenToNode(Point screenPos)
@@ -163,6 +191,94 @@ namespace FlowNode
                 (int)((screenPos.X - panOffset.X) / zoom),
                 (int)((screenPos.Y - panOffset.Y) / zoom)
             );
+        }
+
+        /// <summary>将世界坐标脏区转换为控件客户区并局部重绘；无法计算时回退全屏 Invalidate。</summary>
+        public void InvalidateWorldRect(RectangleF worldRect)
+        {
+            var clientRect = EditorViewport.WorldToClientRect(worldRect, zoom, panOffset, Size);
+            if (clientRect.IsEmpty)
+                Invalidate();
+            else
+                Invalidate(clientRect);
+        }
+
+        public RectangleF GetNodeViewsDirtyRect(IEnumerable<NodeView> views)
+        {
+            var viewSet = new HashSet<NodeView>(views);
+            var rects = new List<RectangleF>();
+            foreach (var view in views)
+            {
+                rects.Add(EditorViewport.ExpandNodeBounds(view.Bounds));
+            }
+
+            foreach (var connector in nodeManager.getConnectors())
+            {
+                if (!nodeViews.TryGetValue(connector.src.host, out var srcView) ||
+                    !nodeViews.TryGetValue(connector.dst.host, out var dstView))
+                    continue;
+
+                if (!viewSet.Contains(srcView) && !viewSet.Contains(dstView))
+                    continue;
+
+                var connectorBounds = GetConnectorWorldBounds(connector);
+                if (connectorBounds.Width > 0 && connectorBounds.Height > 0)
+                    rects.Add(connectorBounds);
+            }
+
+            return EditorViewport.UnionAll(rects);
+        }
+
+        public void InvalidateNodeViewsWithConnectors(IEnumerable<NodeView> views)
+        {
+            var dirty = GetNodeViewsDirtyRect(views);
+            if (dirty.Width <= 0 || dirty.Height <= 0)
+                Invalidate();
+            else
+                InvalidateWorldRect(dirty);
+        }
+
+        public void InvalidateNode(INode node)
+        {
+            if (node != null && nodeViews.TryGetValue(node, out var view))
+                InvalidateNodeViewsWithConnectors(new[] { view });
+        }
+
+        public RectangleF GetConnectorWorldBounds(Connector connector)
+        {
+            if (!nodeViews.TryGetValue(connector.src.host, out NodeView srcView) ||
+                !nodeViews.TryGetValue(connector.dst.host, out NodeView dstView))
+                return RectangleF.Empty;
+
+            if (!srcView.PinBounds.TryGetValue(connector.src, out Rectangle srcPinRect) ||
+                !dstView.PinBounds.TryGetValue(connector.dst, out Rectangle dstPinRect))
+                return RectangleF.Empty;
+
+            var startPoint = new Point(srcPinRect.Right, srcPinRect.Top + srcPinRect.Height / 2);
+            var endPoint = new Point(dstPinRect.Left, dstPinRect.Top + dstPinRect.Height / 2);
+            return EditorViewport.GetConnectorWorldBounds(startPoint, endPoint);
+        }
+
+        public void InvalidateConnector(Connector connector)
+        {
+            var bounds = GetConnectorWorldBounds(connector);
+            if (bounds.Width <= 0 || bounds.Height <= 0)
+                Invalidate();
+            else
+                InvalidateWorldRect(bounds);
+        }
+
+        public Point GetPinConnectionPoint(Pin pin)
+        {
+            if (nodeViews.TryGetValue(pin.host, out NodeView nodeView) &&
+                nodeView.PinBounds.TryGetValue(pin, out Rectangle pinRect))
+            {
+                return new Point(
+                    pin.direction == PinDirection.Input ? pinRect.Left : pinRect.Right,
+                    pinRect.Top + pinRect.Height / 2);
+            }
+
+            return Point.Empty;
         }
 
         public (NodeView nodeView, Pin pin, Connector connector) HitTest(Point location)
@@ -399,9 +515,20 @@ namespace FlowNode
 
         private void OnNodeExecuting(INode node)
         {
+            var dirty = RectangleF.Empty;
+            if (currentExecutingNode != null && nodeViews.TryGetValue(currentExecutingNode, out var previousView))
+                dirty = EditorViewport.ExpandNodeBounds(previousView.Bounds);
+
             currentExecutingNode = node;
-            // 立即重绘以呈现高亮（执行节奏由 RunLoop 控制）
-            Invalidate();
+
+            if (nodeViews.TryGetValue(node, out var nextView))
+                dirty = EditorViewport.Union(dirty, EditorViewport.ExpandNodeBounds(nextView.Bounds));
+
+            if (dirty.Width <= 0 || dirty.Height <= 0)
+                Invalidate();
+            else
+                InvalidateWorldRect(dirty);
+
             Update();
         }
 
@@ -805,22 +932,18 @@ namespace FlowNode
                 !nodeViews.TryGetValue(connector.dst.host, out NodeView dstView))
                     continue;
 
+                // 视口裁剪：连线包围盒不在可见区域则跳过
+                var connectorBounds = GetConnectorWorldBounds(connector);
+                if (connectorBounds.Width <= 0 || connectorBounds.Height <= 0 ||
+                    !visibleRect.IntersectsWith(connectorBounds))
+                    continue;
+
                 if (!srcView.PinBounds.TryGetValue(connector.src, out Rectangle srcPinRect) ||
                     !dstView.PinBounds.TryGetValue(connector.dst, out Rectangle dstPinRect))
                     continue;
 
                 Point startPoint = new Point(srcPinRect.Right, srcPinRect.Top + srcPinRect.Height / 2);
                 Point endPoint = new Point(dstPinRect.Left, dstPinRect.Top + dstPinRect.Height / 2);
-
-                // 视口裁剪：连线包围盒不在可见区域则跳过
-                float minX = Math.Min(startPoint.X, endPoint.X);
-                float minY = Math.Min(startPoint.Y, endPoint.Y);
-                float maxX = Math.Max(startPoint.X, endPoint.X);
-                float maxY = Math.Max(startPoint.Y, endPoint.Y);
-                var connectorBounds = RectangleF.FromLTRB(minX, minY, maxX, maxY);
-                connectorBounds.Inflate(4, 4);
-                if (!visibleRect.IntersectsWith(connectorBounds))
-                    continue;
 
                 Color lineColor = connector.src.pinType == PinType.Execute ?
                     Color.FromArgb(255, 128, 0) : Color.FromArgb(0, 120, 255);
@@ -1068,19 +1191,6 @@ namespace FlowNode
         //    }
         //}
 
-        private Point GetPinConnectionPoint(Pin pin)
-        {
-            if (nodeViews.TryGetValue(pin.host, out NodeView nodeView) &&
-                nodeView.PinBounds.TryGetValue(pin, out Rectangle pinRect))
-            {
-                return new Point(
-                    pin.direction == PinDirection.Input ? pinRect.Left : pinRect.Right,
-                    pinRect.Top + pinRect.Height / 2
-                );
-            }
-            return Point.Empty;
-        }
-
         public Point PanOffset
         {
             get => panOffset;
@@ -1320,6 +1430,8 @@ namespace FlowNode
             if (moves == null || moves.Count == 0)
                 return;
 
+            var dirty = GetNodeViewsDirtyRect(moves.Keys);
+
             using (commandManager.BeginCommandGroup())
             {
                 foreach (var pair in moves)
@@ -1329,7 +1441,8 @@ namespace FlowNode
                 }
             }
 
-            Invalidate();
+            dirty = EditorViewport.Union(dirty, GetNodeViewsDirtyRect(moves.Keys));
+            InvalidateWorldRect(dirty);
         }
     }
 

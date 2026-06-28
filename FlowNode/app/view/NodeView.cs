@@ -33,8 +33,7 @@ namespace FlowNode.app.view
 
         public void Invalidate()
         {
-            // 通知父控件重绘
-            Parent?.Invalidate(Bounds);
+            Parent?.InvalidateNodeViewsWithConnectors(new[] { this });
         }
 
         protected NodeView(NodeBase node, Point location)

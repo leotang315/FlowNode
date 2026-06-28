@@ -70,6 +70,7 @@
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="app\view\DefaultNodeView.cs" />
+    <Compile Include="app\view\EditorViewport.cs" />
     <Compile Include="app\view\DemoForm.cs">
       <SubType>Form</SubType>
     </Compile>
