@@ -40,5 +40,15 @@ namespace FlowNode
                 manager.pushNextConnectNode(pin_false);
             }
         }
+
+        public override string GetDisplaySubtitle()
+        {
+            if (pin_condition == null)
+                return null;
+
+            return pin_condition.data is bool b
+                ? (b ? "true" : "false")
+                : null;
+        }
     }
 }

@@ -50,5 +50,17 @@ namespace FlowNode.Tests
             Assert.Throws<InvalidOperationException>(
                 () => mgr.addConnector(intSource.findPin("n"), branch.findPin("Condition")));
         }
+
+        [Test]
+        public void GetDisplaySubtitle_ShowsConditionValue()
+        {
+            var branch = new BranchNode();
+            branch.init();
+            branch.pin_condition.data = true;
+            Assert.AreEqual("true", branch.GetDisplaySubtitle());
+
+            branch.pin_condition.data = false;
+            Assert.AreEqual("false", branch.GetDisplaySubtitle());
+        }
     }
 }

@@ -13,6 +13,9 @@ namespace FlowNode.app.command
         private const int MaxUndoCount = 100; // 最大撤销次数
         private CommandGroup currentGroup = null;
 
+        /// <summary>图被命令修改后触发（Execute / Undo / Redo / 命令组完成）。</summary>
+        public event Action AfterModify;
+
         /// <summary>
         /// 是否可以撤销
         /// </summary>
@@ -47,6 +50,8 @@ namespace FlowNode.app.command
                     {
                         undoStack.Pop();
                     }
+
+                    NotifyModified();
                 }
             }
             catch (Exception ex)
@@ -68,6 +73,7 @@ namespace FlowNode.app.command
                 var command = undoStack.Pop();
                 command.Undo();
                 redoStack.Push(command);
+                NotifyModified();
             }
             catch (Exception ex)
             {
@@ -94,6 +100,7 @@ namespace FlowNode.app.command
                 var command = redoStack.Pop();
                 command.Execute();
                 undoStack.Push(command);
+                NotifyModified();
             }
             catch (Exception ex)
             {
@@ -123,6 +130,11 @@ namespace FlowNode.app.command
         {
             currentGroup = new CommandGroup(this);
             return currentGroup;
+        }
+
+        private void NotifyModified()
+        {
+            AfterModify?.Invoke();
         }
 
         private class CommandGroup : IDisposable
@@ -196,6 +208,7 @@ namespace FlowNode.app.command
                         // 只有所有命令都成功执行，才将组合命令添加到撤销栈
                         manager.undoStack.Push(compositeCommand);
                         manager.redoStack.Clear();
+                        manager.NotifyModified();
                     }
                 }
                 finally

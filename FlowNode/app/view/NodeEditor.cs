@@ -51,6 +51,14 @@ namespace FlowNode
         /// </summary>
         public event Action SelectionChanged;
 
+        /// <summary>图内容被修改时触发（增删改节点/连线/布局等），供未保存提示等订阅。</summary>
+        public event Action GraphChanged;
+
+        private void NotifyGraphChanged()
+        {
+            GraphChanged?.Invoke();
+        }
+
         // 复制/粘贴使用的内存剪贴板
         private List<ClipboardNode> clipboardNodes;
         private List<ClipboardConnector> clipboardConnectors;
@@ -86,6 +94,7 @@ namespace FlowNode
 
             this.MouseWheel += NodeEditor_MouseWheel;
             serializationService = new NodeSerializationService(nodeManager, nodeViews);
+            commandManager.AfterModify += NotifyGraphChanged;
         }
 
         public NodeManager NodeManager => nodeManager;
@@ -1145,6 +1154,50 @@ namespace FlowNode
         public void StartSelecting(Point startPos)
         {
             ChangeState(new SelectingState(this, startPos));
+        }
+
+        /// <summary>将当前选中的多个节点按指定边对齐（至少 2 个节点）。</summary>
+        public void AlignSelection(NodeAlignEdge edge)
+        {
+            if (selectedNodes.Count < 2)
+                return;
+
+            ApplyLayoutMoves(NodeEditorLayout.Align(selectedNodes.ToList(), edge));
+        }
+
+        /// <summary>将当前选中的多个节点水平等距排列（至少 3 个节点）。</summary>
+        public void DistributeSelectionHorizontally()
+        {
+            if (selectedNodes.Count < 3)
+                return;
+
+            ApplyLayoutMoves(NodeEditorLayout.DistributeHorizontally(selectedNodes.ToList()));
+        }
+
+        /// <summary>将当前选中的多个节点垂直等距排列（至少 3 个节点）。</summary>
+        public void DistributeSelectionVertically()
+        {
+            if (selectedNodes.Count < 3)
+                return;
+
+            ApplyLayoutMoves(NodeEditorLayout.DistributeVertically(selectedNodes.ToList()));
+        }
+
+        private void ApplyLayoutMoves(Dictionary<NodeView, Point> moves)
+        {
+            if (moves == null || moves.Count == 0)
+                return;
+
+            using (commandManager.BeginCommandGroup())
+            {
+                foreach (var pair in moves)
+                {
+                    var oldLocation = pair.Key.Bounds.Location;
+                    commandManager.ExecuteCommand(new MoveNodeViewCommand(pair.Key, oldLocation, pair.Value));
+                }
+            }
+
+            Invalidate();
         }
     }
 

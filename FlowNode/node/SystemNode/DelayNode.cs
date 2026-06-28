@@ -34,5 +34,10 @@ namespace FlowNode.node
             }
             manager.pushNextConnectNode(pin_output);
         }
+
+        public override string GetDisplaySubtitle()
+        {
+            return DelayMs + "ms";
+        }
     }
 }

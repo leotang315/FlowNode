@@ -10,6 +10,9 @@ namespace FlowNode
         private NodeEditor editor;
         private NodeBase currentNode;
 
+        /// <summary>属性面板中节点属性被修改时触发（不经 CommandManager）。</summary>
+        public event Action PropertiesChanged;
+
         public PropertyPanel(NodeEditor editor)
         {
             this.editor = editor;
@@ -31,6 +34,7 @@ namespace FlowNode
         private void PropertyGrid_PropertyValueChanged(object s, PropertyValueChangedEventArgs e)
         {
             editor?.Invalidate();
+            PropertiesChanged?.Invoke();
         }
 
         public void ShowProperties(NodeBase node)

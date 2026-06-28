@@ -25,6 +25,7 @@ namespace FlowNode
         private DataViewControl dataView;
         private TextBox logTextBox;
         private string currentFilePath;
+        private bool isDirty;
         public DemoForm()
         {
             InitializeComponent();
@@ -39,7 +40,70 @@ namespace FlowNode
             InitializeDataView();
             InitializePropertyPanel();
             InitializeLogPanel();
+            WireDirtyTracking();
             UpdateTitle();
+        }
+
+        private void WireDirtyTracking()
+        {
+            FormClosing += DemoForm_FormClosing;
+            nodeEditor.GraphChanged += MarkDirty;
+            propertyPanel.PropertiesChanged += MarkDirty;
+        }
+
+        private void MarkDirty()
+        {
+            if (isDirty)
+                return;
+
+            isDirty = true;
+            UpdateTitle();
+        }
+
+        private void ClearDirty()
+        {
+            if (!isDirty)
+                return;
+
+            isDirty = false;
+            UpdateTitle();
+        }
+
+        /// <summary>若有未保存更改则提示；返回 Yes=继续（已保存或放弃），No=放弃，Cancel=取消操作。</summary>
+        private DialogResult ConfirmDiscardChanges()
+        {
+            if (!isDirty)
+                return DialogResult.Yes;
+
+            var result = MessageBox.Show(
+                "当前文档有未保存的更改，是否保存？",
+                "未保存的更改",
+                MessageBoxButtons.YesNoCancel,
+                MessageBoxIcon.Warning);
+
+            if (result == DialogResult.Yes)
+            {
+                if (string.IsNullOrEmpty(currentFilePath))
+                {
+                    SaveFileAs();
+                }
+                else
+                {
+                    SaveFile();
+                }
+
+                return isDirty ? DialogResult.Cancel : DialogResult.Yes;
+            }
+
+            return result;
+        }
+
+        private void DemoForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (ConfirmDiscardChanges() == DialogResult.Cancel)
+            {
+                e.Cancel = true;
+            }
         }
 
         private void InitializeLogPanel()
@@ -101,6 +165,36 @@ namespace FlowNode
 
             // 添加文件按钮到工具栏
             toolStrip.Items.Add(fileButton);
+
+            var editButton = new ToolStripDropDownButton("Edit");
+
+            var alignLeftItem = new ToolStripMenuItem("Align Left");
+            alignLeftItem.Click += (s, e) => nodeEditor.AlignSelection(NodeAlignEdge.Left);
+            editButton.DropDownItems.Add(alignLeftItem);
+
+            var alignRightItem = new ToolStripMenuItem("Align Right");
+            alignRightItem.Click += (s, e) => nodeEditor.AlignSelection(NodeAlignEdge.Right);
+            editButton.DropDownItems.Add(alignRightItem);
+
+            var alignTopItem = new ToolStripMenuItem("Align Top");
+            alignTopItem.Click += (s, e) => nodeEditor.AlignSelection(NodeAlignEdge.Top);
+            editButton.DropDownItems.Add(alignTopItem);
+
+            var alignBottomItem = new ToolStripMenuItem("Align Bottom");
+            alignBottomItem.Click += (s, e) => nodeEditor.AlignSelection(NodeAlignEdge.Bottom);
+            editButton.DropDownItems.Add(alignBottomItem);
+
+            editButton.DropDownItems.Add(new ToolStripSeparator());
+
+            var distributeHItem = new ToolStripMenuItem("Distribute Horizontally");
+            distributeHItem.Click += (s, e) => nodeEditor.DistributeSelectionHorizontally();
+            editButton.DropDownItems.Add(distributeHItem);
+
+            var distributeVItem = new ToolStripMenuItem("Distribute Vertically");
+            distributeVItem.Click += (s, e) => nodeEditor.DistributeSelectionVertically();
+            editButton.DropDownItems.Add(distributeVItem);
+
+            toolStrip.Items.Add(editButton);
 
             // 添加分隔符
             toolStrip.Items.Add(new ToolStripSeparator());
@@ -240,8 +334,7 @@ namespace FlowNode
 
         private void NewFile()
         {
-            if (MessageBox.Show("新建将清空当前图，未保存的内容会丢失。是否继续？", "新建",
-                    MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) != DialogResult.OK)
+            if (ConfirmDiscardChanges() != DialogResult.Yes)
             {
                 return;
             }
@@ -250,11 +343,16 @@ namespace FlowNode
             currentFilePath = null;
             dataView?.RefreshList();
             propertyPanel?.ClearProperties();
-            UpdateTitle();
+            ClearDirty();
         }
 
         private void OpenFile()
         {
+            if (ConfirmDiscardChanges() != DialogResult.Yes)
+            {
+                return;
+            }
+
             using (OpenFileDialog openDialog = new OpenFileDialog())
             {
                 openDialog.Filter = "XML files (*.xml)|*.xml|All files (*.*)|*.*";
@@ -273,7 +371,7 @@ namespace FlowNode
                     currentFilePath = openDialog.FileName;
                     dataView?.RefreshList();
                     propertyPanel?.ClearProperties();
-                    UpdateTitle();
+                    ClearDirty();
                 }
                 catch (Exception ex)
                 {
@@ -294,6 +392,7 @@ namespace FlowNode
             try
             {
                 nodeEditor.SaveToFile(currentFilePath);
+                ClearDirty();
             }
             catch (Exception ex)
             {
@@ -322,7 +421,7 @@ namespace FlowNode
                 {
                     nodeEditor.SaveToFile(saveDialog.FileName);
                     currentFilePath = saveDialog.FileName;
-                    UpdateTitle();
+                    ClearDirty();
                 }
                 catch (Exception ex)
                 {
@@ -336,7 +435,8 @@ namespace FlowNode
             var fileName = string.IsNullOrEmpty(currentFilePath)
                 ? "Untitled"
                 : System.IO.Path.GetFileName(currentFilePath);
-            this.Text = $"FlowNode - {fileName}";
+            var dirtyMark = isDirty ? " *" : "";
+            this.Text = $"FlowNode - {fileName}{dirtyMark}";
         }
 
         private void InitializeDataView()

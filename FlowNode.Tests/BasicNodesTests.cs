@@ -94,6 +94,14 @@ namespace FlowNode.Tests
         }
 
         [Test]
+        public void DelayNode_GetDisplaySubtitle_ShowsMilliseconds()
+        {
+            var node = new DelayNode();
+            node.DelayMs = 250;
+            Assert.AreEqual("250ms", node.GetDisplaySubtitle());
+        }
+
+        [Test]
         public void CommentNode_PassesExecuteThrough()
         {
             var mgr = new NodeManager();

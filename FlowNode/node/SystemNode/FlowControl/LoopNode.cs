@@ -52,6 +52,11 @@ namespace FlowNode.node
                 manager.pushNextConnectNode(pin_completed);
             }
         }
+
+        public override string GetDisplaySubtitle()
+        {
+            return "×" + LoopCount;
+        }
     }
 
 }

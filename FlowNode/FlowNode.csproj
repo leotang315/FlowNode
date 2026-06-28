@@ -81,6 +81,7 @@
     <Compile Include="app\view\NodeEditor.Designer.cs">
       <DependentUpon>NodeEditor.cs</DependentUpon>
     </Compile>
+    <Compile Include="app\view\NodeEditorLayout.cs" />
     <Compile Include="app\view\NodeView.cs" />
     <Compile Include="app\view\NodeViewFactory.cs" />
     <Compile Include="app\view\states\ConnectingState.cs" />

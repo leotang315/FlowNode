@@ -70,5 +70,13 @@ namespace FlowNode.Tests
             Assert.IsNotNull(prop, "LoopCount 应为公有属性");
             Assert.IsTrue(prop.CanRead && prop.CanWrite);
         }
+
+        [Test]
+        public void GetDisplaySubtitle_ShowsLoopCount()
+        {
+            var loop = new LoopNode();
+            loop.LoopCount = 5;
+            Assert.AreEqual("×5", loop.GetDisplaySubtitle());
+        }
     }
 }
