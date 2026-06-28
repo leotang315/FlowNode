@@ -37,6 +37,9 @@ namespace FlowNode
         private readonly HashSet<INode> breakpoints = new HashSet<INode>();
         private bool skipBreakpointOnce;
 
+        // 执行出错时为 true：保留出错节点高亮并以红色显示
+        private bool executionError;
+
         /// <summary>执行过程中的日志消息，供外部日志面板订阅。</summary>
         public event Action<string> ExecutionLog;
 
@@ -204,6 +207,8 @@ namespace FlowNode
                 return;
             }
 
+            ResetExecutionState();
+            LogWarnings();
             AttachExecutionHandlers();
             try
             {
@@ -239,6 +244,8 @@ namespace FlowNode
                     return;
                 }
 
+                ResetExecutionState();
+                LogWarnings();
                 AttachExecutionHandlers();
                 try
                 {
@@ -258,8 +265,10 @@ namespace FlowNode
             }
             catch (Exception ex)
             {
+                executionError = true;
                 ExecutionLog?.Invoke("[错误] " + ex.Message);
                 MessageBox.Show($"Execution Error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                nodeManager.StopRun(true);
                 FinishExecution();
                 return;
             }
@@ -280,6 +289,8 @@ namespace FlowNode
             if (!nodeManager.IsRunning)
                 return;
             nodeManager.StopRun();
+            executionError = false;
+            currentExecutingNode = null;
             FinishExecution();
         }
 
@@ -312,8 +323,10 @@ namespace FlowNode
             }
             catch (Exception ex)
             {
+                executionError = true;
                 ExecutionLog?.Invoke("[错误] " + ex.Message);
                 MessageBox.Show($"Execution Error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                nodeManager.StopRun(true);
                 FinishExecution();
             }
         }
@@ -328,9 +341,27 @@ namespace FlowNode
         {
             nodeManager.NodeExecuting -= OnNodeExecuting;
             nodeManager.Log -= OnManagerLog;
-            currentExecutingNode = null;
+            // 出错时保留高亮停在出错节点上，便于定位
+            if (!executionError)
+            {
+                currentExecutingNode = null;
+            }
             skipBreakpointOnce = false;
             Invalidate();
+        }
+
+        private void ResetExecutionState()
+        {
+            executionError = false;
+            currentExecutingNode = null;
+        }
+
+        private void LogWarnings()
+        {
+            foreach (var warning in nodeManager.ValidateWarnings())
+            {
+                ExecutionLog?.Invoke("[警告] " + warning);
+            }
         }
 
         /// <summary>
@@ -407,10 +438,18 @@ namespace FlowNode
         /// </summary>
         public void NewGraph()
         {
+            if (nodeManager.IsRunning)
+            {
+                nodeManager.StopRun(true);
+                FinishExecution();
+            }
             nodeManager.clear();
             nodeViews.Clear();
             commandManager.Clear();
             selectedConnector = null;
+            breakpoints.Clear();
+            executionError = false;
+            currentExecutingNode = null;
             ClearSelection();
             Invalidate();
         }
@@ -666,17 +705,18 @@ namespace FlowNode
             {
                 nodeView.Paint(g);
 
-                // 绘制当前执行节点高亮（绿色发光边框）
+                // 绘制当前执行节点高亮：正常为绿色发光，出错节点为红色发光
                 if (currentExecutingNode != null && nodeView.Node == currentExecutingNode)
                 {
                     var bounds = nodeView.Bounds;
                     bounds.Inflate(2, 2);
-                    using (var glowPen = new Pen(Color.FromArgb(120, 0, 230, 80), 6))
+                    Color coreColor = executionError ? Color.FromArgb(235, 60, 40) : Color.FromArgb(0, 230, 80);
+                    using (var glowPen = new Pen(Color.FromArgb(120, coreColor), 6))
                     using (var glowPath = CreateRoundedRectangle(bounds, 4))
                     {
                         g.DrawPath(glowPen, glowPath);
                     }
-                    using (var pen = new Pen(Color.FromArgb(0, 230, 80), 2))
+                    using (var pen = new Pen(coreColor, 2))
                     using (var path = CreateRoundedRectangle(bounds, 4))
                     {
                         g.DrawPath(pen, path);

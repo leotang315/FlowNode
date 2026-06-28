@@ -132,6 +132,35 @@ namespace FlowNode.node
         }
 
         /// <summary>
+        /// 执行前的告警检查（不阻断执行）：孤立节点、未连接且无默认值的数据输入引脚。
+        /// </summary>
+        public List<string> ValidateWarnings()
+        {
+            var warnings = new List<string>();
+
+            foreach (var node in nodes)
+            {
+                bool hasAnyConnection = connectors.Any(c => c.src.host == node || c.dst.host == node);
+                if (!hasAnyConnection)
+                {
+                    warnings.Add($"节点 \"{node.Name}\" 未连接任何引脚（孤立节点，不会参与执行）。");
+                    continue;
+                }
+
+                foreach (var pin in node.Pins.Where(p => p.direction == PinDirection.Input && p.pinType == PinType.Data))
+                {
+                    bool connected = connectors.Any(c => c.dst == pin);
+                    if (!connected && pin.data == null)
+                    {
+                        warnings.Add($"节点 \"{node.Name}\" 的数据输入引脚 \"{pin.Name}\" 未连接且无默认值。");
+                    }
+                }
+            }
+
+            return warnings;
+        }
+
+        /// <summary>
         /// 检测执行引脚连接是否形成有向环（循环节点通过运行时重新压栈实现，不会产生连接环，故不会被误报）。
         /// </summary>
         private bool HasExecuteCycle()
@@ -237,14 +266,17 @@ namespace FlowNode.node
             return true;
         }
 
-        /// <summary>主动中止执行。</summary>
-        public void StopRun()
+        /// <summary>主动中止执行。silent=true 时不输出停止日志（用于出错复位）。</summary>
+        public void StopRun(bool silent = false)
         {
             if (!isRunning)
                 return;
             executionStack.Clear();
             isRunning = false;
-            Log?.Invoke("=== 执行已停止 ===");
+            if (!silent)
+            {
+                Log?.Invoke("=== 执行已停止 ===");
+            }
         }
 
         private void EndRun()
