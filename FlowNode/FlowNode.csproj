@@ -103,6 +103,7 @@
     <Compile Include="node\INodeManager.cs" />
     <Compile Include="node\NodeBase.cs" />
     <Compile Include="node\NodeManager.cs" />
+    <Compile Include="node\NodePropertySheet.cs" />
     <Compile Include="node\Pin.cs" />
     <Compile Include="node\PinValueConverter.cs" />
     <Compile Include="node\SystemNode\FlowControl\BranchNode.cs" />

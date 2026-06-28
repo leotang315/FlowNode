@@ -9,9 +9,19 @@ namespace FlowNode.node
     public abstract class ConstantNodeBase<T> : NodeBase
     {
         protected Pin pin_value;
+        private T valueBacking;
 
         /// <summary>常量值（在属性面板中编辑）。</summary>
-        public T Value { get; set; }
+        public T Value
+        {
+            get => valueBacking;
+            set
+            {
+                valueBacking = value;
+                if (pin_value != null)
+                    pin_value.data = value;
+            }
+        }
 
         protected ConstantNodeBase()
         {
