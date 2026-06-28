@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      # FlowNode targets .NET Framework 4.7.2 and the test project is SDK-style;
+      # VS MSBuild on the runner handles both, restoring NuGet packages from nuget.org.
+      - name: Restore
+        run: msbuild FlowNode.sln /t:Restore /p:Configuration=Release
+
+      - name: Build
+        run: msbuild FlowNode.sln /t:Build /p:Configuration=Release /p:RestorePackages=false
+
+      # The test project self-runs its NUnit-style cases via a built-in lightweight
+      # runner and returns a non-zero exit code on failure (CI-friendly).
+      - name: Run tests
+        run: .\FlowNode.Tests\bin\Release\net472\FlowNode.Tests.exe
