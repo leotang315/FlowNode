@@ -86,10 +86,9 @@ namespace FlowNode
             int right = ordered[ordered.Count - 1].Bounds.Right;
             int totalWidth = ordered.Sum(v => v.Bounds.Width);
             int span = right - left - totalWidth;
-            if (span < 0)
-                return result;
+            // 选中范围不足以容纳等距间隙（如节点重叠或横向排成一行）时，改为 gap=0 从左缘依次排开
+            int gap = span >= 0 ? span / (ordered.Count - 1) : 0;
 
-            int gap = span / (ordered.Count - 1);
             int x = left;
             for (int i = 0; i < ordered.Count; i++)
             {
@@ -114,10 +113,9 @@ namespace FlowNode
             int bottom = ordered[ordered.Count - 1].Bounds.Bottom;
             int totalHeight = ordered.Sum(v => v.Bounds.Height);
             int span = bottom - top - totalHeight;
-            if (span < 0)
-                return result;
+            // 选中范围不足以容纳等距间隙（如节点重叠或纵向间距过小）时，改为 gap=0 从顶缘依次排开
+            int gap = span >= 0 ? span / (ordered.Count - 1) : 0;
 
-            int gap = span / (ordered.Count - 1);
             int y = top;
             for (int i = 0; i < ordered.Count; i++)
             {

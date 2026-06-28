@@ -577,6 +577,7 @@ namespace FlowNode
                         e.Handled = true;
                         return;
                     case Keys.J:
+                    case Keys.V:
                         DistributeSelectionVertically();
                         e.Handled = true;
                         return;

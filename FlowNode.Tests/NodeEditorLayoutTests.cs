@@ -65,6 +65,19 @@ namespace FlowNode.Tests
         }
 
         [Test]
+        public void DistributeVertically_WhenNodesOverlap_PacksFromTop()
+        {
+            var a = CreateView(0, 0);
+            var b = CreateView(0, 100);
+            var c = CreateView(0, 200);
+            var moves = NodeEditorLayout.DistributeVertically(new List<NodeView> { a, b, c });
+
+            Assert.AreEqual(2, moves.Count);
+            Assert.AreEqual(new Point(0, 120), moves[b]);
+            Assert.AreEqual(new Point(0, 240), moves[c]);
+        }
+
+        [Test]
         public void Align_WithSingleView_ReturnsEmpty()
         {
             var a = CreateView(0, 0);
