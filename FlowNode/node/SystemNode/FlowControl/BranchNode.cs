@@ -25,7 +25,7 @@ namespace FlowNode
             pin_input = createPin("Input", PinDirection.Input, PinType.Execute);
             pin_true = createPin("True", PinDirection.Output, PinType.Execute);
             pin_false = createPin("False", PinDirection.Output, PinType.Execute);
-            pin_condition = createPin("Condition", PinDirection.Input, PinType.Data);
+            pin_condition = createPin("Condition", PinDirection.Input, PinType.Data, typeof(bool), false);
         }
 
         public override void excute(INodeManager manager)
