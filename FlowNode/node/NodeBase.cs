@@ -15,6 +15,11 @@ namespace FlowNode.node
         public bool IsAutoRun {  get; set; }
         public string NodePath { get;  set; }
 
+        /// <summary>
+        /// 可选：在节点标题下方显示的副标题（如常量节点的当前值）。
+        /// </summary>
+        public virtual string GetDisplaySubtitle() => null;
+
         public NodeBase()
         {
             Pins = new List<Pin>();

@@ -1,4 +1,6 @@
+using System;
 using FlowNode.node.Attribute;
+using System.Globalization;
 
 namespace FlowNode.node
 {
@@ -26,6 +28,13 @@ namespace FlowNode.node
         protected ConstantNodeBase()
         {
             IsAutoRun = true;
+        }
+
+        public override string GetDisplaySubtitle()
+        {
+            return Value != null
+                ? Convert.ToString(Value, CultureInfo.InvariantCulture)
+                : "null";
         }
 
         public override void allocateDefaultPins()

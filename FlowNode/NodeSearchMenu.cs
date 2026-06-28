@@ -8,21 +8,18 @@ using FlowNode.node;
 namespace FlowNode
 {
     /// <summary>
-    /// 右键空白处弹出的节点搜索菜单：列出 NodeFactory 中已注册的所有节点路径，
+    /// 右键空白处弹出的节点搜索菜单：按路径分组展示 NodeFactory 中已注册节点，
     /// 支持关键字过滤，选中后在指定画布位置创建节点。
     /// </summary>
     public class NodeSearchMenu : Form
     {
         private TextBox searchBox;
-        private ListBox resultList;
+        private TreeView resultTree;
 
         private readonly NodeEditor editor;
-        private readonly Point nodeLocation;   // 画布坐标，用于创建节点
+        private readonly Point nodeLocation;
         private List<string> allNodePaths;
 
-        /// <param name="editor">目标编辑器</param>
-        /// <param name="screenLocation">菜单显示的屏幕坐标</param>
-        /// <param name="nodeLocation">节点创建的画布坐标</param>
         public NodeSearchMenu(NodeEditor editor, Point screenLocation, Point nodeLocation)
         {
             this.editor = editor;
@@ -38,7 +35,7 @@ namespace FlowNode
             FormBorderStyle = FormBorderStyle.None;
             StartPosition = FormStartPosition.Manual;
             Location = screenLocation;
-            Size = new Size(240, 320);
+            Size = new Size(280, 360);
             ShowInTaskbar = false;
             TopMost = true;
             BackColor = Color.FromArgb(60, 60, 60);
@@ -52,26 +49,30 @@ namespace FlowNode
             searchBox.TextChanged += (s, e) => RefreshResults();
             searchBox.KeyDown += SearchBox_KeyDown;
 
-            resultList = new ListBox
+            resultTree = new TreeView
             {
                 Dock = DockStyle.Fill,
                 BackColor = Color.FromArgb(45, 45, 45),
                 ForeColor = Color.White,
-                BorderStyle = BorderStyle.None
+                BorderStyle = BorderStyle.None,
+                HideSelection = false,
+                FullRowSelect = true,
+                ShowLines = true,
+                ShowPlusMinus = true,
+                ShowRootLines = false,
+                Indent = 16
             };
-            resultList.DoubleClick += (s, e) => CreateSelectedNode();
-            resultList.KeyDown += ResultList_KeyDown;
+            resultTree.DoubleClick += (s, e) => CreateSelectedNode();
+            resultTree.KeyDown += ResultTree_KeyDown;
 
-            Controls.Add(resultList);
+            Controls.Add(resultTree);
             Controls.Add(searchBox);
 
-            // 让搜索框拿到焦点，弹出即可直接输入
             Shown += (s, e) => searchBox.Focus();
         }
 
         private void InitializeNodeTypes()
         {
-            // 直接复用 NodeFactory 反射得到的所有已注册节点路径
             allNodePaths = NodeFactory.GetNodePath()
                 .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
                 .ToList();
@@ -81,20 +82,84 @@ namespace FlowNode
         {
             string keyword = searchBox.Text.Trim().ToLowerInvariant();
 
-            resultList.BeginUpdate();
-            resultList.Items.Clear();
-            foreach (var path in allNodePaths)
+            var filtered = allNodePaths.Where(path =>
+                keyword.Length == 0 || path.ToLowerInvariant().Contains(keyword));
+
+            resultTree.BeginUpdate();
+            resultTree.Nodes.Clear();
+            BuildPathTree(resultTree.Nodes, filtered);
+            ExpandFirstLevel();
+            SelectFirstLeaf();
+            resultTree.EndUpdate();
+        }
+
+        private static void BuildPathTree(TreeNodeCollection parentNodes, IEnumerable<string> paths)
+        {
+            foreach (var path in paths)
             {
-                if (keyword.Length == 0 || path.ToLowerInvariant().Contains(keyword))
+                var segments = path.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
+                var current = parentNodes;
+
+                for (int i = 0; i < segments.Length; i++)
                 {
-                    resultList.Items.Add(path);
+                    string segment = segments[i];
+                    bool isLeaf = i == segments.Length - 1;
+
+                    TreeNode node = FindChild(current, segment);
+                    if (node == null)
+                    {
+                        node = new TreeNode(segment);
+                        current.Add(node);
+                    }
+
+                    if (isLeaf)
+                    {
+                        node.Tag = path;
+                    }
+
+                    current = node.Nodes;
                 }
             }
-            if (resultList.Items.Count > 0)
+        }
+
+        private static TreeNode FindChild(TreeNodeCollection nodes, string text)
+        {
+            foreach (TreeNode node in nodes)
             {
-                resultList.SelectedIndex = 0;
+                if (string.Equals(node.Text, text, StringComparison.OrdinalIgnoreCase))
+                    return node;
             }
-            resultList.EndUpdate();
+            return null;
+        }
+
+        private void ExpandFirstLevel()
+        {
+            foreach (TreeNode node in resultTree.Nodes)
+            {
+                node.Expand();
+            }
+        }
+
+        private void SelectFirstLeaf()
+        {
+            var leaf = FindFirstLeaf(resultTree.Nodes);
+            if (leaf != null)
+            {
+                resultTree.SelectedNode = leaf;
+            }
+        }
+
+        private static TreeNode FindFirstLeaf(TreeNodeCollection nodes)
+        {
+            foreach (TreeNode node in nodes)
+            {
+                if (node.Tag is string)
+                    return node;
+                var nested = FindFirstLeaf(node.Nodes);
+                if (nested != null)
+                    return nested;
+            }
+            return null;
         }
 
         private void SearchBox_KeyDown(object sender, KeyEventArgs e)
@@ -109,15 +174,14 @@ namespace FlowNode
             {
                 Close();
             }
-            else if (e.KeyCode == Keys.Down && resultList.Items.Count > 0)
+            else if (e.KeyCode == Keys.Down && resultTree.Nodes.Count > 0)
             {
-                // 方向键下移焦点到列表，便于继续选择
-                resultList.Focus();
+                resultTree.Focus();
                 e.Handled = true;
             }
         }
 
-        private void ResultList_KeyDown(object sender, KeyEventArgs e)
+        private void ResultTree_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
@@ -132,31 +196,28 @@ namespace FlowNode
 
         private void CreateSelectedNode()
         {
-            if (resultList.SelectedItem == null)
+            var selected = resultTree.SelectedNode;
+            if (selected?.Tag is string path)
             {
-                return;
-            }
-
-            string path = resultList.SelectedItem.ToString();
-            try
-            {
-                var node = NodeFactory.CreateNode(path);
-                editor.AddNode(node, nodeLocation);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"创建节点失败：{path}\n{ex.Message}", "FlowNode",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
-            finally
-            {
-                Close();
+                try
+                {
+                    var node = NodeFactory.CreateNode(path);
+                    editor.AddNode(node, nodeLocation);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"创建节点失败：{path}\n{ex.Message}", "FlowNode",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                finally
+                {
+                    Close();
+                }
             }
         }
 
         protected override void OnDeactivate(EventArgs e)
         {
-            // 点击菜单外区域即关闭，表现为弹出菜单
             base.OnDeactivate(e);
             Close();
         }

@@ -55,6 +55,9 @@ namespace FlowNode.app.view
         // 绘制节点
         public virtual void Paint(Graphics g)
         {
+            int headerHeight = GetHeaderHeight();
+            string subtitle = Node.GetDisplaySubtitle();
+
             // 绘制节点背景
             using (var brush = new SolidBrush(Color.FromArgb(70, 70, 70)))
             {
@@ -62,17 +65,31 @@ namespace FlowNode.app.view
             }
 
             // 绘制节点头部
-            var headerRect = new Rectangle(Bounds.X, Bounds.Y, Bounds.Width, 25);
+            var headerRect = new Rectangle(Bounds.X, Bounds.Y, Bounds.Width, headerHeight);
             using (var brush = new SolidBrush(Color.FromArgb(90, 90, 90)))
             {
                 g.FillRectangle(brush, headerRect);
             }
 
             // 绘制标题
+            var titleRect = string.IsNullOrEmpty(subtitle)
+                ? headerRect
+                : new Rectangle(headerRect.X, headerRect.Y, headerRect.Width, 18);
             using (var brush = new SolidBrush(Color.White))
             using (var format = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
             {
-                g.DrawString(Node.Name, SystemFonts.DefaultFont, brush, headerRect, format);
+                g.DrawString(Node.Name, SystemFonts.DefaultFont, brush, titleRect, format);
+            }
+
+            // 绘制副标题（如常量值）
+            if (!string.IsNullOrEmpty(subtitle))
+            {
+                var subtitleRect = new Rectangle(headerRect.X, headerRect.Y + 18, headerRect.Width, headerRect.Height - 18);
+                using (var brush = new SolidBrush(Color.FromArgb(180, 220, 255)))
+                using (var format = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
+                {
+                    g.DrawString(subtitle, SystemFonts.DefaultFont, brush, subtitleRect, format);
+                }
             }
 
             // 绘制边框
@@ -126,6 +143,16 @@ namespace FlowNode.app.view
             }
         }
 
+        protected int GetHeaderHeight()
+        {
+            return string.IsNullOrEmpty(Node.GetDisplaySubtitle()) ? 25 : 38;
+        }
+
+        protected int GetPinAreaTop()
+        {
+            return Bounds.Top + GetHeaderHeight() + 5;
+        }
+
         protected virtual void UpdatePinLocations()
         {
             PinBounds.Clear();
@@ -137,10 +164,12 @@ namespace FlowNode.app.view
             var inputPins = inputExecPins.Concat(inputDataPins).ToList();
             var outputPins = outputExecPins.Concat(outputDataPins).ToList();
 
+            int pinTop = GetPinAreaTop();
+
             // 布局输入引脚
             for (int i = 0; i < inputPins.Count; i++)
             {
-                int y = Bounds.Top + 30 + (i * 25);
+                int y = pinTop + (i * 25);
                 PinBounds[inputPins[i]] = new Rectangle(
                     Bounds.Left - 8,
                     y - 4,
@@ -151,7 +180,7 @@ namespace FlowNode.app.view
             // 布局输出引脚
             for (int i = 0; i < outputPins.Count; i++)
             {
-                int y = Bounds.Top + 30 + (i * 25);
+                int y = pinTop + (i * 25);
                 PinBounds[outputPins[i]] = new Rectangle(
                     Bounds.Right,
                     y - 4,
@@ -170,7 +199,7 @@ namespace FlowNode.app.view
             );
 
             // 从标题栏下方开始布局
-            int currentY = bounds.Y + 30;
+            int currentY = bounds.Y + GetHeaderHeight() + 5;
             const int MARGIN = 10;
             const int SPACING = 5;
 

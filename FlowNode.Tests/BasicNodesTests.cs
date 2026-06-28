@@ -76,6 +76,15 @@ namespace FlowNode.Tests
         }
 
         [Test]
+        public void IntConstant_GetDisplaySubtitle_ShowsCurrentValue()
+        {
+            var c = new IntConstantNode();
+            c.init();
+            c.Value = 42;
+            Assert.AreEqual("42", c.GetDisplaySubtitle());
+        }
+
+        [Test]
         public void ConstantToPrint_Flow_LogsResolvedValue()
         {
             var mgr = new NodeManager();
