@@ -104,6 +104,7 @@
     <Compile Include="node\NodeBase.cs" />
     <Compile Include="node\NodeManager.cs" />
     <Compile Include="node\Pin.cs" />
+    <Compile Include="node\PinValueConverter.cs" />
     <Compile Include="node\SystemNode\FlowControl\BranchNode.cs" />
     <Compile Include="node\Attribute\FunctionAttribute.cs" />
     <Compile Include="node\NodeFactory.cs" />

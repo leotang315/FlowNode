@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Xml.Serialization;
@@ -104,7 +105,7 @@ namespace FlowNode.app.serialization
                         Direction = pin.direction,
                         PinType = pin.pinType,
                         DataType = pin.dataType?.FullName,
-                        DefaultValue = pin.data?.ToString(),
+                        DefaultValue = pin.data != null ? Convert.ToString(pin.data, CultureInfo.InvariantCulture) : null,
                         ValueTypeName = pin.data?.GetType().FullName
                     });
                 }
@@ -191,15 +192,20 @@ namespace FlowNode.app.serialization
                         }
                     }
 
-                    //// 恢复引脚数据
-                    //foreach (var pinData in nodeData.Pins)
-                    //{
-                    //    var pin = node.findPin(pinData.Name);
-                    //    if (pin != null)
-                    //    {
-                    //        pin.data = pinData.DefaultValue;
-                    //    }
-                    //}
+                    // 恢复引脚默认值（仅原始可转换类型；复杂对象不在序列化范围内）
+                    foreach (var pinData in nodeData.Pins)
+                    {
+                        if (pinData.DefaultValue == null) continue;
+
+                        var pin = node.findPin(pinData.Name);
+                        if (pin == null) continue;
+
+                        var value = PinValueConverter.ConvertStringToValue(pinData.DefaultValue, pinData.ValueTypeName, pin.dataType);
+                        if (value != null)
+                        {
+                            pin.data = value;
+                        }
+                    }
 
                     nodeManager.addNode(node);
                     nodeMap[nodeData.Id] = node;
