@@ -54,5 +54,26 @@ namespace FlowNode.Tests
             Assert.IsTrue(paths.Exists(p => p.EndsWith("intToFloat")));
             Assert.IsTrue(paths.Exists(p => p.EndsWith("floatToInt")));
         }
+
+        [Test]
+        public void StringToInt_ParsesOrZero()
+        {
+            Assert.AreEqual(42, RunFunc("StringToInt", ("value", "42")));
+            Assert.AreEqual(0, RunFunc("StringToInt", ("value", "not-a-number")));
+        }
+
+        [Test]
+        public void StringToFloat_ParsesOrZero()
+        {
+            Assert.AreEqual(1.5f, RunFunc("StringToFloat", ("value", "1.5")));
+            Assert.AreEqual(0f, RunFunc("StringToFloat", ("value", "x")));
+        }
+
+        [Test]
+        public void StringToBool_ParsesOrFalse()
+        {
+            Assert.AreEqual(true, RunFunc("StringToBool", ("value", "True")));
+            Assert.AreEqual(false, RunFunc("StringToBool", ("value", "maybe")));
+        }
     }
 }

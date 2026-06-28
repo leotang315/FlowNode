@@ -85,6 +85,34 @@ namespace FlowNode.Tests
         }
 
         [Test]
+        public void CommentNode_GetDisplaySubtitle_ShowsText()
+        {
+            var node = new CommentNode();
+            node.init();
+            node.Text = "checkpoint";
+            Assert.AreEqual("checkpoint", node.GetDisplaySubtitle());
+        }
+
+        [Test]
+        public void CommentNode_PassesExecuteThrough()
+        {
+            var mgr = new NodeManager();
+            var comment = new CommentNode();
+            comment.init();
+            var print = new PrintNode();
+            print.init();
+            mgr.addNode(comment);
+            mgr.addNode(print);
+            mgr.addConnector(comment.findPin("Output"), print.findPin("Input"));
+
+            string log = null;
+            mgr.Log += s => { if (s != null && s.StartsWith("[Print]")) log = s; };
+
+            mgr.run();
+            Assert.AreEqual("[Print] null", log);
+        }
+
+        [Test]
         public void ConstantToPrint_Flow_LogsResolvedValue()
         {
             var mgr = new NodeManager();

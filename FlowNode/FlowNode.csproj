@@ -100,6 +100,7 @@
     <Compile Include="app\node\MathOperator.cs" />
     <Compile Include="app\node\ComparisonOperator.cs" />
     <Compile Include="app\node\ConvertOperator.cs" />
+    <Compile Include="app\node\StringOperator.cs" />
     <Compile Include="node\Connector.cs" />
     <Compile Include="node\INode.cs" />
     <Compile Include="node\INodeManager.cs" />
@@ -118,6 +119,8 @@
     <Compile Include="node\SystemNode\GetObjectNode.cs" />
     <Compile Include="node\SystemNode\SetObjectNode.cs" />
     <Compile Include="node\SystemNode\PrintNode.cs" />
+    <Compile Include="node\SystemNode\DelayNode.cs" />
+    <Compile Include="node\SystemNode\CommentNode.cs" />
     <Compile Include="node\SystemNode\ConstantNodes.cs" />
     <Compile Include="node\TestNode.cs" />
     <Compile Include="Program.cs" />

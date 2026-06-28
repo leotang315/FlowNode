@@ -38,5 +38,32 @@ namespace FlowNode.node
         {
             result = value ? "True" : "False";
         }
+
+        [Function("stringToInt", true)]
+        public static void StringToInt(string value, out int result)
+        {
+            if (!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out result))
+            {
+                result = 0;
+            }
+        }
+
+        [Function("stringToFloat", true)]
+        public static void StringToFloat(string value, out float result)
+        {
+            if (!float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out result))
+            {
+                result = 0f;
+            }
+        }
+
+        [Function("stringToBool", true)]
+        public static void StringToBool(string value, out bool result)
+        {
+            if (!bool.TryParse(value, out result))
+            {
+                result = false;
+            }
+        }
     }
 }

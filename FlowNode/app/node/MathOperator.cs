@@ -40,5 +40,65 @@ namespace FlowNode.node
         {
             result = b != 0 ? a % b : 0;
         }
+
+        [Function("min", true)]
+        public static void min(int a, int b, out int result)
+        {
+            result = a < b ? a : b;
+        }
+
+        [Function("max", true)]
+        public static void max(int a, int b, out int result)
+        {
+            result = a > b ? a : b;
+        }
+
+        [Function("abs", true)]
+        public static void abs(int value, out int result)
+        {
+            result = Math.Abs(value);
+        }
+
+        [Function("floatAdd", true)]
+        public static void floatAdd(float a, float b, out float result)
+        {
+            result = a + b;
+        }
+
+        [Function("floatSub", true)]
+        public static void floatSub(float a, float b, out float result)
+        {
+            result = a - b;
+        }
+
+        [Function("floatMul", true)]
+        public static void floatMul(float a, float b, out float result)
+        {
+            result = a * b;
+        }
+
+        [Function("floatDiv", true)]
+        public static void floatDiv(float a, float b, out float result)
+        {
+            result = b != 0f ? a / b : 0f;
+        }
+
+        [Function("floatMin", true)]
+        public static void floatMin(float a, float b, out float result)
+        {
+            result = a < b ? a : b;
+        }
+
+        [Function("floatMax", true)]
+        public static void floatMax(float a, float b, out float result)
+        {
+            result = a > b ? a : b;
+        }
+
+        [Function("floatAbs", true)]
+        public static void floatAbs(float value, out float result)
+        {
+            result = Math.Abs(value);
+        }
     }
 }
