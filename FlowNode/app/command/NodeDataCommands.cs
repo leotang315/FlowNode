@@ -93,22 +93,34 @@ namespace FlowNode.app.command
     public class RemoveConnectorDataCommand : ICommand
     {
         private readonly NodeManager nodeManager;
-        private readonly Connector connector;
+        private readonly Pin sourcePin;
+        private readonly Pin targetPin;
 
         public RemoveConnectorDataCommand(NodeManager nodeManager, Connector connector)
         {
             this.nodeManager = nodeManager;
-            this.connector = connector;
+            this.sourcePin = connector.src;
+            this.targetPin = connector.dst;
         }
 
         public void Execute()
         {
-            nodeManager.removeConnector(connector);
+            var connector = FindConnector();
+            if (connector != null)
+            {
+                nodeManager.removeConnector(connector);
+            }
         }
 
         public void Undo()
         {
-            nodeManager.addConnector(connector.src, connector.dst);
+            nodeManager.addConnector(sourcePin, targetPin);
+        }
+
+        private Connector FindConnector()
+        {
+            return nodeManager.getConnectors()
+                .FirstOrDefault(c => c.src == sourcePin && c.dst == targetPin);
         }
     }
 } 
