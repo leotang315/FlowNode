@@ -625,15 +625,23 @@ namespace FlowNode
             }
         }
 
-        private void DrawGrid(Graphics g)
+        /// <summary>
+        /// 计算当前可见区域在世界坐标系下的矩形（考虑缩放和平移），用于视口裁剪。
+        /// </summary>
+        private RectangleF GetVisibleWorldRect()
         {
-            // 计算可见区域的边界（考虑缩放和平移）
-            var visibleRect = new RectangleF(
+            return new RectangleF(
                 -panOffset.X / zoom,
                 -panOffset.Y / zoom,
                 Width / zoom,
                 Height / zoom
             );
+        }
+
+        private void DrawGrid(Graphics g)
+        {
+            // 计算可见区域的边界（考虑缩放和平移）
+            var visibleRect = GetVisibleWorldRect();
 
             // 网格大小
             var gridSize = 20;
@@ -661,18 +669,30 @@ namespace FlowNode
 
         private void DrawConnectors(Graphics g)
         {
+            var visibleRect = GetVisibleWorldRect();
+
             foreach (var connector in nodeManager.getConnectors())
             {
                 if (!nodeViews.TryGetValue(connector.src.host, out NodeView srcView) ||
                 !nodeViews.TryGetValue(connector.dst.host, out NodeView dstView))
-                    return;
+                    continue;
 
                 if (!srcView.PinBounds.TryGetValue(connector.src, out Rectangle srcPinRect) ||
                     !dstView.PinBounds.TryGetValue(connector.dst, out Rectangle dstPinRect))
-                    return;
+                    continue;
 
                 Point startPoint = new Point(srcPinRect.Right, srcPinRect.Top + srcPinRect.Height / 2);
                 Point endPoint = new Point(dstPinRect.Left, dstPinRect.Top + dstPinRect.Height / 2);
+
+                // 视口裁剪：连线包围盒不在可见区域则跳过
+                float minX = Math.Min(startPoint.X, endPoint.X);
+                float minY = Math.Min(startPoint.Y, endPoint.Y);
+                float maxX = Math.Max(startPoint.X, endPoint.X);
+                float maxY = Math.Max(startPoint.Y, endPoint.Y);
+                var connectorBounds = RectangleF.FromLTRB(minX, minY, maxX, maxY);
+                connectorBounds.Inflate(4, 4);
+                if (!visibleRect.IntersectsWith(connectorBounds))
+                    continue;
 
                 Color lineColor = connector.src.pinType == PinType.Execute ?
                     Color.FromArgb(255, 128, 0) : Color.FromArgb(0, 120, 255);
@@ -701,8 +721,16 @@ namespace FlowNode
 
         private void DrawNodes(Graphics g)
         {
+            var visibleRect = GetVisibleWorldRect();
+
             foreach (var nodeView in nodeViews.Values)
             {
+                // 视口裁剪：节点（含断点圆点的外扩边距）不在可见区域则跳过
+                var cullBounds = nodeView.Bounds;
+                cullBounds.Inflate(8, 8);
+                if (!visibleRect.IntersectsWith(cullBounds))
+                    continue;
+
                 nodeView.Paint(g);
 
                 // 绘制当前执行节点高亮：正常为绿色发光，出错节点为红色发光
