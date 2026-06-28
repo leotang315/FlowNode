@@ -118,5 +118,49 @@ namespace FlowNode.Tests
                 File.Delete(temp);
             }
         }
+
+        [Test]
+        public void SaveLoad_RoundTrips_VarNodes()
+        {
+            var svc = NewService(out var mgr);
+
+            mgr.SetDataObject("score", 99, typeof(int));
+
+            var getNode = NodeFactory.CreateVarNode("score", typeof(int), isSet: false);
+            var printPath = NodeFactory.GetSystemNodePaths().First(p => p.EndsWith("Print"));
+            var print = NodeFactory.CreateNode(printPath);
+            mgr.addNode(getNode);
+            mgr.addNode(print);
+            mgr.addConnector(getNode.findPin("score"), print.findPin("Value"));
+
+            var setNode = NodeFactory.CreateVarNode("flag", typeof(bool), isSet: true);
+            mgr.addNode(setNode);
+
+            var temp = Path.GetTempFileName();
+            try
+            {
+                svc.SaveToFile(temp);
+
+                var svc2 = NewService(out var mgr2);
+                mgr2.SetDataObject("score", 99, typeof(int));
+                svc2.LoadFromFile(temp);
+
+                Assert.AreEqual(3, mgr2.getNodes().Count);
+                Assert.AreEqual(1, mgr2.getConnectors().Count);
+
+                var loadedGet = mgr2.getNodes().OfType<GetObjectNode>().Single();
+                Assert.AreEqual("score", loadedGet.VariableName);
+                Assert.AreEqual(typeof(int), loadedGet.VariableType);
+                Assert.IsTrue(loadedGet.IsAutoRun);
+
+                var loadedSet = mgr2.getNodes().OfType<SetObjectNode>().Single();
+                Assert.AreEqual("flag", loadedSet.VariableName);
+                Assert.AreEqual(typeof(bool), loadedSet.VariableType);
+            }
+            finally
+            {
+                File.Delete(temp);
+            }
+        }
     }
 }

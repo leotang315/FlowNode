@@ -26,6 +26,12 @@ namespace FlowNode.app.serialization
         public string Name { get; set; }
         public bool IsAutoRun { get; set; }
         public string NodePath { get; set; }
+        /// <summary>Get/Set 变量节点：全局变量名（非变量节点为空）。</summary>
+        public string VarName { get; set; }
+        /// <summary>Get/Set 变量节点：变量类型的 AssemblyQualifiedName。</summary>
+        public string VarTypeName { get; set; }
+        /// <summary>Get/Set 变量节点：true=Set，false=Get。</summary>
+        public bool VarIsSet { get; set; }
         public List<PropertyData> Properties { get; set; } = new List<PropertyData>();
         public List<PinData> Pins { get; set; } = new List<PinData>();
     }

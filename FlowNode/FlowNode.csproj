@@ -57,6 +57,7 @@
     <Compile Include="app\node\IntTest.cs" />
     <Compile Include="app\serialization\NodeSerializationData.cs" />
     <Compile Include="app\serialization\NodeSnapshotHelper.cs" />
+    <Compile Include="app\serialization\NodeRestoreHelper.cs" />
     <Compile Include="app\serialization\NodeSerializationService.cs" />
     <Compile Include="app\view\control\NodeButton.cs" />
     <Compile Include="app\view\control\NodeCheckBox.cs" />

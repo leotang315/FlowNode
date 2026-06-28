@@ -72,6 +72,13 @@ namespace FlowNode.app.serialization
                 // 序列化引脚
                 nodeData.Pins = NodeSnapshotHelper.CapturePins((NodeBase)node);
 
+                if (NodeFactory.TryGetVarNodeInfo((NodeBase)node, out var varName, out var varType, out var isSet))
+                {
+                    nodeData.VarName = varName;
+                    nodeData.VarTypeName = varType.AssemblyQualifiedName;
+                    nodeData.VarIsSet = isSet;
+                }
+
                 graphData.Nodes.Add(nodeData);
 
                 // 序列化视图数据
@@ -117,14 +124,15 @@ namespace FlowNode.app.serialization
                 NodeBase node;
                 try
                 {
-                    // 从节点路径创建节点
-                    node = NodeFactory.CreateNode(nodeData.NodePath);
-
-
-                    node.Name = nodeData.Name;
-
-                    // 恢复节点属性与引脚默认值
-                    NodeSnapshotHelper.Apply(node, nodeData.Properties, nodeData.Pins);
+                    node = NodeRestoreHelper.CreateFromSerializedData(
+                        nodeData.NodePath,
+                        nodeData.VarName,
+                        nodeData.VarTypeName,
+                        nodeData.VarIsSet,
+                        nodeData.Name,
+                        nodeData.IsAutoRun,
+                        nodeData.Properties,
+                        nodeData.Pins);
 
                     nodeManager.addNode(node);
                     nodeMap[nodeData.Id] = node;
