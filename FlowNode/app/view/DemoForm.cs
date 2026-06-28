@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,6 +27,9 @@ namespace FlowNode
         private TextBox logTextBox;
         private string currentFilePath;
         private bool isDirty;
+        private const int MaxRecentFiles = 8;
+        private readonly List<string> recentFiles = new List<string>();
+        private ToolStripMenuItem recentFilesMenu;
         public DemoForm()
         {
             InitializeComponent();
@@ -41,8 +45,13 @@ namespace FlowNode
             InitializePropertyPanel();
             InitializeLogPanel();
             WireDirtyTracking();
+            LoadRecentFiles();
+            RefreshRecentMenu();
             UpdateTitle();
         }
+
+        private static string RecentFilesStorePath =>
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FlowNode", "recent.txt");
 
         private void WireDirtyTracking()
         {
@@ -162,8 +171,27 @@ namespace FlowNode
             saveAsMenuItem.Click += (s, e) => SaveFileAs();
             fileButton.DropDownItems.Add(saveAsMenuItem);
 
+            fileButton.DropDownItems.Add(new ToolStripSeparator());
+
+            recentFilesMenu = new ToolStripMenuItem("Open Recent");
+            fileButton.DropDownItems.Add(recentFilesMenu);
+
             // 添加文件按钮到工具栏
             toolStrip.Items.Add(fileButton);
+
+            var viewButton = new ToolStripDropDownButton("View");
+
+            var zoomFitItem = new ToolStripMenuItem("Zoom to Fit All");
+            zoomFitItem.ShortcutKeys = Keys.Control | Keys.D0;
+            zoomFitItem.Click += (s, e) => nodeEditor.ZoomToFitAll();
+            viewButton.DropDownItems.Add(zoomFitItem);
+
+            var zoomSelectionItem = new ToolStripMenuItem("Zoom to Selection");
+            zoomSelectionItem.ShortcutKeys = Keys.Control | Keys.Shift | Keys.D0;
+            zoomSelectionItem.Click += (s, e) => nodeEditor.ZoomToSelection();
+            viewButton.DropDownItems.Add(zoomSelectionItem);
+
+            toolStrip.Items.Add(viewButton);
 
             var editButton = new ToolStripDropDownButton("Edit");
 
@@ -382,19 +410,118 @@ namespace FlowNode
                     return;
                 }
 
-                try
+                OpenFilePath(openDialog.FileName);
+            }
+        }
+
+        private void OpenFilePath(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+            {
+                MessageBox.Show("文件不存在或路径无效。", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                recentFiles.Remove(filePath);
+                SaveRecentFiles();
+                RefreshRecentMenu();
+                return;
+            }
+
+            try
+            {
+                nodeEditor.NewGraph();
+                nodeEditor.LoadFromFile(filePath);
+                currentFilePath = filePath;
+                dataView?.RefreshList();
+                propertyPanel?.ClearProperties();
+                ClearDirty();
+                AddRecentFile(filePath);
+                UpdateTitle();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"加载失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void AddRecentFile(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath))
+                return;
+
+            recentFiles.Remove(filePath);
+            recentFiles.Insert(0, filePath);
+            while (recentFiles.Count > MaxRecentFiles)
+            {
+                recentFiles.RemoveAt(recentFiles.Count - 1);
+            }
+
+            SaveRecentFiles();
+            RefreshRecentMenu();
+        }
+
+        private void LoadRecentFiles()
+        {
+            recentFiles.Clear();
+            try
+            {
+                if (!File.Exists(RecentFilesStorePath))
+                    return;
+
+                foreach (var line in File.ReadAllLines(RecentFilesStorePath))
                 {
-                    nodeEditor.NewGraph();
-                    nodeEditor.LoadFromFile(openDialog.FileName);
-                    currentFilePath = openDialog.FileName;
-                    dataView?.RefreshList();
-                    propertyPanel?.ClearProperties();
-                    ClearDirty();
+                    if (string.IsNullOrWhiteSpace(line))
+                        continue;
+                    var path = line.Trim();
+                    if (File.Exists(path))
+                        recentFiles.Add(path);
                 }
-                catch (Exception ex)
+            }
+            catch
+            {
+                // 忽略损坏的 recent 文件
+            }
+        }
+
+        private void SaveRecentFiles()
+        {
+            try
+            {
+                var dir = Path.GetDirectoryName(RecentFilesStorePath);
+                if (!string.IsNullOrEmpty(dir))
+                    Directory.CreateDirectory(dir);
+                File.WriteAllLines(RecentFilesStorePath, recentFiles);
+            }
+            catch
+            {
+                // 非关键路径，忽略写入失败
+            }
+        }
+
+        private void RefreshRecentMenu()
+        {
+            if (recentFilesMenu == null)
+                return;
+
+            recentFilesMenu.DropDownItems.Clear();
+            if (recentFiles.Count == 0)
+            {
+                recentFilesMenu.DropDownItems.Add(new ToolStripMenuItem("(无)") { Enabled = false });
+                return;
+            }
+
+            foreach (var path in recentFiles)
+            {
+                var item = new ToolStripMenuItem(Path.GetFileName(path))
                 {
-                    MessageBox.Show($"加载失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                    ToolTipText = path
+                };
+                var captured = path;
+                item.Click += (s, e) =>
+                {
+                    if (ConfirmDiscardChanges() != DialogResult.Yes)
+                        return;
+                    OpenFilePath(captured);
+                };
+                recentFilesMenu.DropDownItems.Add(item);
             }
         }
 
@@ -411,6 +538,7 @@ namespace FlowNode
             {
                 nodeEditor.SaveToFile(currentFilePath);
                 ClearDirty();
+                AddRecentFile(currentFilePath);
             }
             catch (Exception ex)
             {
@@ -440,6 +568,7 @@ namespace FlowNode
                     nodeEditor.SaveToFile(saveDialog.FileName);
                     currentFilePath = saveDialog.FileName;
                     ClearDirty();
+                    AddRecentFile(currentFilePath);
                 }
                 catch (Exception ex)
                 {

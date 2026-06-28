@@ -410,6 +410,68 @@ namespace FlowNode
             ExecutionLog?.Invoke(message);
         }
 
+        /// <summary>向日志面板输出编辑器提示（连线失败等）。</summary>
+        public void LogEditorMessage(string message)
+        {
+            ExecutionLog?.Invoke(message);
+        }
+
+        /// <summary>缩放并平移视口，使当前选中节点居中可见。</summary>
+        public void ZoomToSelection()
+        {
+            if (selectedNodes.Count == 0)
+                return;
+
+            ZoomToBounds(GetCombinedBounds(selectedNodes));
+        }
+
+        /// <summary>缩放并平移视口，使全部节点适应画布。</summary>
+        public void ZoomToFitAll()
+        {
+            if (nodeViews.Count == 0)
+                return;
+
+            ZoomToBounds(GetCombinedBounds(nodeViews.Values));
+        }
+
+        private static Rectangle GetCombinedBounds(IEnumerable<NodeView> views)
+        {
+            int left = int.MaxValue;
+            int top = int.MaxValue;
+            int right = int.MinValue;
+            int bottom = int.MinValue;
+
+            foreach (var view in views)
+            {
+                left = Math.Min(left, view.Bounds.Left);
+                top = Math.Min(top, view.Bounds.Top);
+                right = Math.Max(right, view.Bounds.Right);
+                bottom = Math.Max(bottom, view.Bounds.Bottom);
+            }
+
+            if (left == int.MaxValue)
+                return Rectangle.Empty;
+
+            return Rectangle.FromLTRB(left, top, right, bottom);
+        }
+
+        private void ZoomToBounds(Rectangle bounds)
+        {
+            if (bounds.Width <= 0 || bounds.Height <= 0)
+                return;
+
+            const float padding = 48f;
+            float availableW = Math.Max(1, Width - padding * 2);
+            float availableH = Math.Max(1, Height - padding * 2);
+            zoom = Math.Max(0.2f, Math.Min(5f, Math.Min(availableW / bounds.Width, availableH / bounds.Height)));
+
+            float centerX = bounds.X + bounds.Width / 2f;
+            float centerY = bounds.Y + bounds.Height / 2f;
+            panOffset.X = (int)(Width / 2f - centerX * zoom);
+            panOffset.Y = (int)(Height / 2f - centerY * zoom);
+            Invalidate();
+        }
+
         public void Undo()
         {
             commandManager.Undo();
@@ -581,7 +643,20 @@ namespace FlowNode
                         DistributeSelectionVertically();
                         e.Handled = true;
                         return;
+                    case Keys.D0:
+                    case Keys.NumPad0:
+                        ZoomToSelection();
+                        e.Handled = true;
+                        return;
                 }
+            }
+
+            // 适应全部节点 (Ctrl+0)
+            if (e.Control && !e.Shift && e.KeyCode == Keys.D0)
+            {
+                ZoomToFitAll();
+                e.Handled = true;
+                return;
             }
 
             // 处理删除选中节点 (Delete)

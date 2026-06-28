@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -64,6 +65,30 @@ namespace FlowNode.node
                 // 将下一个节点推入执行堆栈
                 manager.pushNextConnectNode(pin_output);
             }
+        }
+
+        public override string GetDisplaySubtitle()
+        {
+            if (method == null)
+                return null;
+
+            var inputs = Pins
+                .Where(p => p.pinType == PinType.Data && p.direction == PinDirection.Input)
+                .ToList();
+
+            if (inputs.Count == 0)
+                return method.Name;
+
+            var parts = inputs.Take(3).Select(FormatPinSummary);
+            return method.Name + "  " + string.Join(", ", parts);
+        }
+
+        private static string FormatPinSummary(Pin pin)
+        {
+            if (pin.data == null)
+                return pin.Name;
+
+            return pin.Name + "=" + Convert.ToString(pin.data, CultureInfo.InvariantCulture);
         }
     }
 }

@@ -1,8 +1,9 @@
 using System;
 using System.Drawing;
 using System.Windows.Forms;
-using FlowNode.node;
 using FlowNode.app.view;
+using FlowNode.node;
+
 namespace FlowNode
 {
     public class ConnectingState : EditorState
@@ -11,10 +12,13 @@ namespace FlowNode
         private readonly Point connectingStart;
         private Point connectingEnd;
         private Pin hoveredPin;
+        private string hoverError;
+
         public override string getName()
         {
             return "ConnectingState";
         }
+
         public ConnectingState(NodeEditor editor, Pin sourcePin) : base(editor)
         {
             this.sourcePin = sourcePin;
@@ -26,21 +30,32 @@ namespace FlowNode
         {
             connectingEnd = ScreenToNode(e.Location);
             var (_, pin, _) = Editor.HitTest(connectingEnd);
-            if (hoveredPin != pin)
+            hoveredPin = pin;
+            hoverError = null;
+            if (hoveredPin != null)
             {
-                hoveredPin = pin;
+                PinTypeValidator.CanConnect(sourcePin, hoveredPin, out hoverError);
             }
+
             Editor.Invalidate();
         }
 
         public override void OnMouseUp(MouseEventArgs e)
         {
-            if (hoveredPin != null && CanConnect(sourcePin, hoveredPin))
+            if (hoveredPin != null)
             {
-                Pin source = sourcePin.direction == PinDirection.Output ? sourcePin : hoveredPin;
-                Pin target = sourcePin.direction == PinDirection.Output ? hoveredPin : sourcePin;
-                Editor.AddConnector(source, target);
+                if (PinTypeValidator.CanConnect(sourcePin, hoveredPin, out string error))
+                {
+                    Pin source = sourcePin.direction == PinDirection.Output ? sourcePin : hoveredPin;
+                    Pin target = sourcePin.direction == PinDirection.Output ? hoveredPin : sourcePin;
+                    Editor.AddConnector(source, target);
+                }
+                else
+                {
+                    Editor.LogEditorMessage("[连线] " + error);
+                }
             }
+
             Editor.ChangeState(new IdleState(Editor));
         }
 
@@ -53,7 +68,8 @@ namespace FlowNode
             Point control1 = new Point(connectingStart.X + (int)tangentLength, connectingStart.Y);
             Point control2 = new Point(endPoint.X - (int)tangentLength, endPoint.Y);
 
-            bool isCompatible = hoveredPin != null && CanConnect(sourcePin, hoveredPin);
+            bool isCompatible = hoveredPin != null &&
+                PinTypeValidator.CanConnect(sourcePin, hoveredPin, out _);
 
             if (hoveredPin != null && !isCompatible)
             {
@@ -61,6 +77,15 @@ namespace FlowNode
                 {
                     pen.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
                     g.DrawBezier(pen, connectingStart, control1, control2, endPoint);
+                }
+
+                if (!string.IsNullOrEmpty(hoverError))
+                {
+                    using (var brush = new SolidBrush(Color.FromArgb(255, 180, 80)))
+                    using (var font = SystemFonts.DefaultFont)
+                    {
+                        g.DrawString(hoverError, font, brush, endPoint.X + 8, endPoint.Y + 8);
+                    }
                 }
             }
             else
@@ -96,37 +121,8 @@ namespace FlowNode
                     pinRect.Top + pinRect.Height / 2
                 );
             }
+
             return Point.Empty;
-        }
-
-        private bool CanConnect(Pin source, Pin target)
-        {
-            if (source == null || target == null)
-                return false;
-
-            // 检查方向和引脚类型
-            bool basicCheck = source.direction != target.direction && // 方向相反
-                             source.pinType == target.pinType;    // 类型相同
-
-            if (!basicCheck) return false;
-
-            // 如果是执行类型的引脚，不需要检查数据类型
-            if (source.pinType == PinType.Execute)
-                return true;
-
-            // 确保source是输出引脚，target是输入引脚
-            Pin outputPin, inputPin;
-            if (source.direction == PinDirection.Output)
-            {
-                outputPin = source;
-                inputPin = target;
-            }
-            else
-            {
-                outputPin = target;
-                inputPin = source;
-            }
-            return PinTypeValidator.AreTypesCompatible(outputPin.dataType, inputPin.dataType);
         }
     }
 }
