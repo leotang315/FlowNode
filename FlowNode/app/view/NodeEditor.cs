@@ -62,6 +62,8 @@ namespace FlowNode
             public string Name;
             public bool IsAutoRun;
             public Point Location;
+            public List<PropertyData> Properties = new List<PropertyData>();
+            public List<PinData> Pins = new List<PinData>();
         }
 
         private class ClipboardConnector
@@ -1019,7 +1021,9 @@ namespace FlowNode
                     NodePath = nodeView.Node.NodePath,
                     Name = nodeView.Node.Name,
                     IsAutoRun = nodeView.Node.IsAutoRun,
-                    Location = nodeView.Bounds.Location
+                    Location = nodeView.Bounds.Location,
+                    Properties = NodeSnapshotHelper.CaptureProperties(nodeView.Node),
+                    Pins = NodeSnapshotHelper.CapturePins(nodeView.Node)
                 });
             }
 
@@ -1079,6 +1083,7 @@ namespace FlowNode
 
                     node.Name = cn.Name;
                     node.IsAutoRun = cn.IsAutoRun;
+                    NodeSnapshotHelper.Apply(node, cn.Properties, cn.Pins);
 
                     var location = new Point(cn.Location.X + offset, cn.Location.Y + offset);
                     var nodeView = NodeViewFactory.CreateNodeView(node, location);

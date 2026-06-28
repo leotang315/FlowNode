@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Xml.Serialization;
@@ -68,47 +67,10 @@ namespace FlowNode.app.serialization
                 };
 
                 // 序列化节点属性
-                var properties = node.GetType().GetProperties();
-                foreach (var property in properties)
-                {
-                    if (property.Name == "Name" || 
-                    property.Name == "Pins"|| 
-                    property.Name == "IsAutoRun"||
-                    property.Name == "NodePath")
-                        continue;
-
-                    try
-                    {
-                        var value = property.GetValue(node);
-                        if (value != null)
-                        {
-                            nodeData.Properties.Add(new PropertyData
-                            {
-                                Key = property.Name,
-                                Value = Convert.ToString(value),
-                                TypeName = value.GetType().FullName
-                            });
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Error serializing property {property.Name}: {ex.Message}");
-                    }
-                }
+                nodeData.Properties = NodeSnapshotHelper.CaptureProperties((NodeBase)node);
 
                 // 序列化引脚
-                foreach (var pin in node.Pins)
-                {
-                    nodeData.Pins.Add(new PinData
-                    {
-                        Name = pin.Name,
-                        Direction = pin.direction,
-                        PinType = pin.pinType,
-                        DataType = pin.dataType?.FullName,
-                        DefaultValue = pin.data != null ? Convert.ToString(pin.data, CultureInfo.InvariantCulture) : null,
-                        ValueTypeName = pin.data?.GetType().FullName
-                    });
-                }
+                nodeData.Pins = NodeSnapshotHelper.CapturePins((NodeBase)node);
 
                 graphData.Nodes.Add(nodeData);
 
@@ -161,51 +123,8 @@ namespace FlowNode.app.serialization
 
                     node.Name = nodeData.Name;
 
-                    // 恢复节点属性
-                    foreach (var property in nodeData.Properties)
-                    {
-                        if (property.Key == "NodePath") continue;
-
-                        try
-                        {
-                            var propertyInfo = node.GetType().GetProperty(property.Key);
-                            if (propertyInfo != null && propertyInfo.CanWrite)
-                            {
-                                if (property.TypeName != null)
-                                {
-                                    var type = Type.GetType(property.TypeName);
-                                    if (type != null)
-                                    {
-                                        var convertedValue = Convert.ChangeType(property.Value, type);
-                                        propertyInfo.SetValue(node, convertedValue);
-                                    }
-                                }
-                                else
-                                {
-                                    propertyInfo.SetValue(node, property.Value);
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"Error deserializing property {property.Key}: {ex.Message}");
-                        }
-                    }
-
-                    // 恢复引脚默认值（仅原始可转换类型；复杂对象不在序列化范围内）
-                    foreach (var pinData in nodeData.Pins)
-                    {
-                        if (pinData.DefaultValue == null) continue;
-
-                        var pin = node.findPin(pinData.Name);
-                        if (pin == null) continue;
-
-                        var value = PinValueConverter.ConvertStringToValue(pinData.DefaultValue, pinData.ValueTypeName, pin.dataType);
-                        if (value != null)
-                        {
-                            pin.data = value;
-                        }
-                    }
+                    // 恢复节点属性与引脚默认值
+                    NodeSnapshotHelper.Apply(node, nodeData.Properties, nodeData.Pins);
 
                     nodeManager.addNode(node);
                     nodeMap[nodeData.Id] = node;
