@@ -75,5 +75,20 @@ namespace FlowNode.Tests
 
             Assert.AreEqual(1, mgr.getConnectors().Count);
         }
+
+        [Test]
+        public void FloatEqual_Works()
+        {
+            Assert.AreEqual(true, RunFunc(typeof(ComparisonOperator), "FloatEqual", ("a", 1.5f), ("b", 1.5f)));
+            Assert.AreEqual(false, RunFunc(typeof(ComparisonOperator), "FloatGreater", ("a", 1.0f), ("b", 2.0f)));
+        }
+
+        [Test]
+        public void StringEqual_IsCaseSensitive()
+        {
+            Assert.AreEqual(true, RunFunc(typeof(ComparisonOperator), "StringEqual", ("a", "hello"), ("b", "hello")));
+            Assert.AreEqual(false, RunFunc(typeof(ComparisonOperator), "StringEqual", ("a", "Hello"), ("b", "hello")));
+            Assert.AreEqual(true, RunFunc(typeof(ComparisonOperator), "StringNotEqual", ("a", "a"), ("b", "b")));
+        }
     }
 }

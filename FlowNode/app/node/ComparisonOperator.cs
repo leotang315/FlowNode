@@ -44,6 +44,58 @@ namespace FlowNode.node
         {
             result = a != b;
         }
+
+        // --- float 比较 ---
+
+        [Function("floatGreater", true)]
+        public static void FloatGreater(float a, float b, out bool result)
+        {
+            result = a > b;
+        }
+
+        [Function("floatGreaterOrEqual", true)]
+        public static void FloatGreaterOrEqual(float a, float b, out bool result)
+        {
+            result = a >= b;
+        }
+
+        [Function("floatLess", true)]
+        public static void FloatLess(float a, float b, out bool result)
+        {
+            result = a < b;
+        }
+
+        [Function("floatLessOrEqual", true)]
+        public static void FloatLessOrEqual(float a, float b, out bool result)
+        {
+            result = a <= b;
+        }
+
+        [Function("floatEqual", true)]
+        public static void FloatEqual(float a, float b, out bool result)
+        {
+            result = a == b;
+        }
+
+        [Function("floatNotEqual", true)]
+        public static void FloatNotEqual(float a, float b, out bool result)
+        {
+            result = a != b;
+        }
+
+        // --- string 比较 ---
+
+        [Function("stringEqual", true)]
+        public static void StringEqual(string a, string b, out bool result)
+        {
+            result = string.Equals(a, b);
+        }
+
+        [Function("stringNotEqual", true)]
+        public static void StringNotEqual(string a, string b, out bool result)
+        {
+            result = !string.Equals(a, b);
+        }
     }
 
     /// <summary>

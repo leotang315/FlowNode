@@ -99,6 +99,7 @@
     <Compile Include="node\Attribute\NodeAttribute.cs" />
     <Compile Include="app\node\MathOperator.cs" />
     <Compile Include="app\node\ComparisonOperator.cs" />
+    <Compile Include="app\node\ConvertOperator.cs" />
     <Compile Include="node\Connector.cs" />
     <Compile Include="node\INode.cs" />
     <Compile Include="node\INodeManager.cs" />
