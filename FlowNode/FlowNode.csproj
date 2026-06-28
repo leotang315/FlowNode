@@ -112,13 +112,14 @@
     <Compile Include="node\SystemNode\FlowControl\SequenceNode.cs" />
     <Compile Include="node\SystemNode\GetObjectNode.cs" />
     <Compile Include="node\SystemNode\SetObjectNode.cs" />
+    <Compile Include="node\SystemNode\PrintNode.cs" />
+    <Compile Include="node\SystemNode\ConstantNodes.cs" />
     <Compile Include="node\TestNode.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PropertyPanel.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Test.cs" />
     <EmbeddedResource Include="app\view\DemoForm.resx">
       <DependentUpon>DemoForm.cs</DependentUpon>
     </EmbeddedResource>

@@ -23,6 +23,12 @@ namespace FlowNode.node
         /// <summary>执行过程中的日志消息，供日志面板显示。</summary>
         public event Action<string> Log;
 
+        /// <summary>向执行日志写一条消息（供 Print 等节点输出到日志面板）。</summary>
+        public void WriteLog(string message)
+        {
+            Log?.Invoke(message);
+        }
+
 
 
         public List<Connector> getConnectors()

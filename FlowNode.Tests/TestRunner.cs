@@ -43,6 +43,9 @@ namespace FlowNode.Tests
                         var inner = (ex is TargetInvocationException tie && tie.InnerException != null)
                             ? tie.InnerException : ex;
                         Console.WriteLine($"  FAIL  {fixture.Name}.{m.Name}: {inner.GetType().Name}: {inner.Message}");
+                        var firstFrame = (inner.StackTrace ?? "").Split('\n');
+                        if (firstFrame.Length > 0)
+                            Console.WriteLine("        at " + firstFrame[0].Trim());
                     }
                 }
             }
