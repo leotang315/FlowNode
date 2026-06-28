@@ -41,5 +41,32 @@ namespace FlowNode.Tests
             Assert.AreEqual(true, Run("Contains", ("text", "hello world"), ("sub", "world")));
             Assert.AreEqual(false, Run("Contains", ("text", "hello"), ("sub", "x")));
         }
+
+        [Test]
+        public void Substring_ExtractsRange()
+        {
+            Assert.AreEqual("lo", Run("Substring", ("value", "hello"), ("start", 3), ("length", 2)));
+            Assert.AreEqual(string.Empty, Run("Substring", ("value", "hello"), ("start", 10), ("length", 2)));
+        }
+
+        [Test]
+        public void Trim_RemovesWhitespace()
+        {
+            Assert.AreEqual("hi", Run("Trim", ("value", "  hi  ")));
+        }
+
+        [Test]
+        public void Replace_SubstitutesText()
+        {
+            Assert.AreEqual("bar bar", Run("Replace", ("value", "foo foo"), ("oldValue", "foo"), ("newValue", "bar")));
+        }
+
+        [Test]
+        public void StartsWith_And_EndsWith()
+        {
+            Assert.AreEqual(true, Run("StartsWith", ("value", "hello"), ("prefix", "he")));
+            Assert.AreEqual(true, Run("EndsWith", ("value", "hello"), ("suffix", "lo")));
+            Assert.AreEqual(false, Run("StartsWith", ("value", "hello"), ("prefix", "lo")));
+        }
     }
 }

@@ -42,7 +42,7 @@ msbuild FlowNode.sln /p:Configuration=Release
 powershell -ExecutionPolicy Bypass -File scripts/run-tests.ps1
 ```
 
-脚本使用 Visual Studio 自带的 MSBuild 构建（以正确处理 .NET Framework 的 `.resx`），并通过工程内置的轻量 runner 执行用例（规避旧版 NUnit3 引擎在本机枚举 .NET 7 运行时目录时的已知崩溃），全部通过时退出码为 0。当前 **118** 个用例。
+脚本使用 Visual Studio 自带的 MSBuild 构建（以正确处理 .NET Framework 的 `.resx`），并通过工程内置的轻量 runner 执行用例（规避旧版 NUnit3 引擎在本机枚举 .NET 7 运行时目录时的已知崩溃），全部通过时退出码为 0。当前 **130** 个用例。
 
 ## 快捷键（摘要）
 

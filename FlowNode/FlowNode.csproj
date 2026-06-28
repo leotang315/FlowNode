@@ -105,6 +105,7 @@
     <Compile Include="app\node\ComparisonOperator.cs" />
     <Compile Include="app\node\ConvertOperator.cs" />
     <Compile Include="app\node\StringOperator.cs" />
+    <Compile Include="app\node\RandomOperator.cs" />
     <Compile Include="node\Connector.cs" />
     <Compile Include="node\INode.cs" />
     <Compile Include="node\INodeManager.cs" />
@@ -118,6 +119,7 @@
     <Compile Include="node\NodeFactory.cs" />
     <Compile Include="node\SystemNode\FunctionNode.cs" />
     <Compile Include="node\SystemNode\FlowControl\LoopNode.cs" />
+    <Compile Include="node\SystemNode\FlowControl\SwitchNode.cs" />
     <Compile Include="node\Attribute\SystemNodeAttribute.cs" />
     <Compile Include="node\SystemNode\FlowControl\SequenceNode.cs" />
     <Compile Include="node\SystemNode\GetObjectNode.cs" />

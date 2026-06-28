@@ -100,5 +100,65 @@ namespace FlowNode.node
         {
             result = Math.Abs(value);
         }
+
+        [Function("clamp", true)]
+        public static void clamp(int value, int min, int max, out int result)
+        {
+            if (min > max)
+            {
+                var tmp = min;
+                min = max;
+                max = tmp;
+            }
+            result = Math.Max(min, Math.Min(max, value));
+        }
+
+        [Function("lerp", true)]
+        public static void lerp(int a, int b, float t, out int result)
+        {
+            result = (int)(a + (b - a) * t);
+        }
+
+        [Function("floatClamp", true)]
+        public static void floatClamp(float value, float min, float max, out float result)
+        {
+            if (min > max)
+            {
+                var tmp = min;
+                min = max;
+                max = tmp;
+            }
+            result = Math.Max(min, Math.Min(max, value));
+        }
+
+        [Function("floatLerp", true)]
+        public static void floatLerp(float a, float b, float t, out float result)
+        {
+            result = a + (b - a) * t;
+        }
+
+        [Function("floatPow", true)]
+        public static void floatPow(float value, float exponent, out float result)
+        {
+            result = (float)Math.Pow(value, exponent);
+        }
+
+        [Function("floor", true)]
+        public static void floor(float value, out int result)
+        {
+            result = (int)Math.Floor(value);
+        }
+
+        [Function("ceil", true)]
+        public static void ceil(float value, out int result)
+        {
+            result = (int)Math.Ceiling(value);
+        }
+
+        [Function("round", true)]
+        public static void round(float value, out int result)
+        {
+            result = (int)Math.Round(value, MidpointRounding.AwayFromZero);
+        }
     }
 }
