@@ -30,6 +30,16 @@
 msbuild FlowNode.sln /p:Configuration=Release
 ```
 
+## 运行测试
+
+`node/` 纯逻辑层由 `FlowNode.Tests` 工程覆盖（NUnit 风格用例）。一键构建并运行：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/run-tests.ps1
+```
+
+脚本使用 Visual Studio 自带的 MSBuild 构建（以正确处理 .NET Framework 的 `.resx`），并通过工程内置的轻量 runner 执行用例（规避旧版 NUnit3 引擎在本机枚举 .NET 7 运行时目录时的已知崩溃），全部通过时退出码为 0。
+
 ## 项目结构
 
 ```

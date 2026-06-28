@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.29009.5
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowNode", "FlowNode\FlowNode.csproj", "{8375915B-58BE-46B1-BA2E-BC9A6FF5AB82}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowNode.Tests", "FlowNode.Tests\FlowNode.Tests.csproj", "{A6DF1456-9823-448B-B504-9D266BA6B4AC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{8375915B-58BE-46B1-BA2E-BC9A6FF5AB82}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8375915B-58BE-46B1-BA2E-BC9A6FF5AB82}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8375915B-58BE-46B1-BA2E-BC9A6FF5AB82}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A6DF1456-9823-448B-B504-9D266BA6B4AC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6DF1456-9823-448B-B504-9D266BA6B4AC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6DF1456-9823-448B-B504-9D266BA6B4AC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6DF1456-9823-448B-B504-9D266BA6B4AC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

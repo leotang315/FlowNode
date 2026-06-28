@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+    <AssemblyName>FlowNode.Tests</AssemblyName>
+    <RootNamespace>FlowNode.Tests</RootNamespace>
+    <!--
+      仅引用 FlowNode 的纯逻辑层（node/）。
+      使用 NUnit 的 [Test]/Assert 编写用例，但通过内置的轻量 runner（Program.cs）自跑，
+      以规避本机 NUnit3 引擎在枚举 .NET 7 运行时目录时崩溃的已知 bug。
+      待缓存中具备修复版 NUnit3TestAdapter(>=4.3) 后，可加回 Microsoft.NET.Test.Sdk
+      与 NUnit3TestAdapter 直接接入 VS Test Explorer / dotnet test，用例无需改动。
+    -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NUnit" Version="3.13.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FlowNode\FlowNode.csproj" />
+  </ItemGroup>
+
+</Project>
