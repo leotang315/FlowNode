@@ -97,7 +97,21 @@ namespace FlowNode
 
             this.MouseWheel += NodeEditor_MouseWheel;
             serializationService = new NodeSerializationService(nodeManager, nodeViews);
-            commandManager.AfterModify += NotifyGraphChanged;
+            commandManager.AfterModify += OnCommandGraphModified;
+        }
+
+        private void OnCommandGraphModified()
+        {
+            SyncSwitchNodePins();
+            NotifyGraphChanged();
+        }
+
+        private void SyncSwitchNodePins()
+        {
+            foreach (var node in nodeManager.getNodes().OfType<SwitchNode>())
+            {
+                node.SyncCasePins(nodeManager);
+            }
         }
 
         public NodeManager NodeManager => nodeManager;

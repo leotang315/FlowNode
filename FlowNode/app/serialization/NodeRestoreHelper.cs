@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Linq;
 using FlowNode.node;
 
 namespace FlowNode.app.serialization
@@ -33,6 +35,19 @@ namespace FlowNode.app.serialization
 
             node.Name = name;
             node.IsAutoRun = isAutoRun;
+
+            if (node is SwitchNode switchNode && properties != null)
+            {
+                var caseCount = properties.FirstOrDefault(p => p.Key == "CaseCount");
+                if (caseCount != null &&
+                    int.TryParse(caseCount.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int count))
+                {
+                    switchNode.CaseCount = count;
+                }
+
+                switchNode.SyncCasePins(null);
+            }
+
             NodeSnapshotHelper.Apply(node, properties, pins);
             return node;
         }

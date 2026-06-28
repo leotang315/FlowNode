@@ -78,10 +78,64 @@ namespace FlowNode.Tests
             var sw = new SwitchNode { CaseCount = 3 };
             sw.init();
             sw.findPin("Index").data = 2;
-            Assert.AreEqual("→Case2", sw.GetDisplaySubtitle());
+            Assert.AreEqual("3路 →Case2", sw.GetDisplaySubtitle());
 
             sw.findPin("Index").data = 9;
-            Assert.AreEqual("→Default", sw.GetDisplaySubtitle());
+            Assert.AreEqual("3路 →Default", sw.GetDisplaySubtitle());
+        }
+
+        [Test]
+        public void SyncCasePins_MatchesCaseCount()
+        {
+            var mgr = new NodeManager();
+            var sw = new SwitchNode { CaseCount = 2 };
+            sw.init();
+            mgr.addNode(sw);
+
+            Assert.IsNotNull(sw.findPin("Case0"));
+            Assert.IsNotNull(sw.findPin("Case1"));
+            Assert.IsNull(sw.findPin("Case2"));
+
+            sw.CaseCount = 4;
+            sw.SyncCasePins(mgr);
+
+            Assert.IsNotNull(sw.findPin("Case3"));
+            Assert.IsNull(sw.findPin("Case4"));
+        }
+
+        [Test]
+        public void SyncCasePins_ClampsToMaxCases()
+        {
+            var mgr = new NodeManager();
+            var sw = new SwitchNode { CaseCount = 2 };
+            sw.init();
+            mgr.addNode(sw);
+
+            sw.CaseCount = 50;
+            sw.SyncCasePins(mgr);
+
+            Assert.AreEqual(SwitchNode.MaxCases, sw.GetEffectiveCaseCount());
+            Assert.IsNotNull(sw.findPin("Case31"));
+            Assert.IsNull(sw.findPin("Case32"));
+        }
+
+        [Test]
+        public void SyncCasePins_RemovingCaseRemovesConnectors()
+        {
+            var mgr = new NodeManager();
+            var sw = new SwitchNode { CaseCount = 3 };
+            sw.init();
+            var print = new PrintNode();
+            print.init();
+            mgr.addNode(sw);
+            mgr.addNode(print);
+            mgr.addConnector(sw.findPin("Case2"), print.findPin("Input"));
+
+            sw.CaseCount = 2;
+            sw.SyncCasePins(mgr);
+
+            Assert.IsNull(sw.findPin("Case2"));
+            Assert.AreEqual(0, mgr.getConnectors().Count);
         }
     }
 }
