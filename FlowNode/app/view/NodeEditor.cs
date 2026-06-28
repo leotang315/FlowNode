@@ -72,6 +72,9 @@ namespace FlowNode
             public Point Location;
             public List<PropertyData> Properties = new List<PropertyData>();
             public List<PinData> Pins = new List<PinData>();
+            public string VarName;
+            public string VarTypeName;
+            public bool? VarIsSet;
         }
 
         private class ClipboardConnector
@@ -546,6 +549,38 @@ namespace FlowNode
                 PasteClipboard();
                 e.Handled = true;
                 return;
+            }
+
+            // 对齐与等距 (Ctrl+Shift+…)
+            if (e.Control && e.Shift)
+            {
+                switch (e.KeyCode)
+                {
+                    case Keys.L:
+                        AlignSelection(NodeAlignEdge.Left);
+                        e.Handled = true;
+                        return;
+                    case Keys.R:
+                        AlignSelection(NodeAlignEdge.Right);
+                        e.Handled = true;
+                        return;
+                    case Keys.T:
+                        AlignSelection(NodeAlignEdge.Top);
+                        e.Handled = true;
+                        return;
+                    case Keys.B:
+                        AlignSelection(NodeAlignEdge.Bottom);
+                        e.Handled = true;
+                        return;
+                    case Keys.H:
+                        DistributeSelectionHorizontally();
+                        e.Handled = true;
+                        return;
+                    case Keys.J:
+                        DistributeSelectionVertically();
+                        e.Handled = true;
+                        return;
+                }
             }
 
             // 处理删除选中节点 (Delete)
@@ -1034,6 +1069,13 @@ namespace FlowNode
                     Properties = NodeSnapshotHelper.CaptureProperties(nodeView.Node),
                     Pins = NodeSnapshotHelper.CapturePins(nodeView.Node)
                 });
+                if (NodeFactory.TryGetVarNodeInfo(nodeView.Node, out var varName, out var varType, out var isSet))
+                {
+                    var last = clipboardNodes[clipboardNodes.Count - 1];
+                    last.VarName = varName;
+                    last.VarTypeName = varType.AssemblyQualifiedName;
+                    last.VarIsSet = isSet;
+                }
             }
 
             // 仅复制两端都在选区内的连线
@@ -1076,17 +1118,25 @@ namespace FlowNode
                 for (int i = 0; i < clipboardNodes.Count; i++)
                 {
                     var cn = clipboardNodes[i];
-                    if (string.IsNullOrEmpty(cn.NodePath))
-                        continue; // 无法通过路径重建的节点（如变量节点）暂不支持复制
-
                     NodeBase node;
                     try
                     {
-                        node = NodeFactory.CreateNode(cn.NodePath);
+                        if (!string.IsNullOrEmpty(cn.VarName) && cn.VarIsSet.HasValue)
+                        {
+                            node = NodeFactory.CreateVarNodeFromInfo(cn.VarName, cn.VarTypeName, cn.VarIsSet.Value);
+                        }
+                        else if (!string.IsNullOrEmpty(cn.NodePath))
+                        {
+                            node = NodeFactory.CreateNode(cn.NodePath);
+                        }
+                        else
+                        {
+                            continue;
+                        }
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Debug.WriteLine($"粘贴时创建节点失败 {cn.NodePath}: {ex.Message}");
+                        System.Diagnostics.Debug.WriteLine($"粘贴时创建节点失败: {ex.Message}");
                         continue;
                     }
 

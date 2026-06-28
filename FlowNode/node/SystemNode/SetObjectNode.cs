@@ -17,6 +17,12 @@ namespace FlowNode.node
             m_objectType = varType;
         }
 
+        /// <summary>绑定的全局变量名（复制粘贴与序列化识别用）。</summary>
+        public string VariableName => m_objectName;
+
+        /// <summary>绑定的全局变量类型。</summary>
+        public Type VariableType => m_objectType;
+
         public override void allocateDefaultPins()
         {
             createPin("Input", PinDirection.Input, PinType.Execute);

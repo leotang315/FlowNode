@@ -48,7 +48,6 @@ namespace FlowNode
         {
             FormClosing += DemoForm_FormClosing;
             nodeEditor.GraphChanged += MarkDirty;
-            propertyPanel.PropertiesChanged += MarkDirty;
         }
 
         private void MarkDirty()
@@ -168,29 +167,47 @@ namespace FlowNode
 
             var editButton = new ToolStripDropDownButton("Edit");
 
+            var undoItem = new ToolStripMenuItem("Undo");
+            undoItem.ShortcutKeys = Keys.Control | Keys.Z;
+            undoItem.Click += (s, e) => nodeEditor.Undo();
+            editButton.DropDownItems.Add(undoItem);
+
+            var redoItem = new ToolStripMenuItem("Redo");
+            redoItem.ShortcutKeys = Keys.Control | Keys.Y;
+            redoItem.Click += (s, e) => nodeEditor.Redo();
+            editButton.DropDownItems.Add(redoItem);
+
+            editButton.DropDownItems.Add(new ToolStripSeparator());
+
             var alignLeftItem = new ToolStripMenuItem("Align Left");
+            alignLeftItem.ShortcutKeys = Keys.Control | Keys.Shift | Keys.L;
             alignLeftItem.Click += (s, e) => nodeEditor.AlignSelection(NodeAlignEdge.Left);
             editButton.DropDownItems.Add(alignLeftItem);
 
             var alignRightItem = new ToolStripMenuItem("Align Right");
+            alignRightItem.ShortcutKeys = Keys.Control | Keys.Shift | Keys.R;
             alignRightItem.Click += (s, e) => nodeEditor.AlignSelection(NodeAlignEdge.Right);
             editButton.DropDownItems.Add(alignRightItem);
 
             var alignTopItem = new ToolStripMenuItem("Align Top");
+            alignTopItem.ShortcutKeys = Keys.Control | Keys.Shift | Keys.T;
             alignTopItem.Click += (s, e) => nodeEditor.AlignSelection(NodeAlignEdge.Top);
             editButton.DropDownItems.Add(alignTopItem);
 
             var alignBottomItem = new ToolStripMenuItem("Align Bottom");
+            alignBottomItem.ShortcutKeys = Keys.Control | Keys.Shift | Keys.B;
             alignBottomItem.Click += (s, e) => nodeEditor.AlignSelection(NodeAlignEdge.Bottom);
             editButton.DropDownItems.Add(alignBottomItem);
 
             editButton.DropDownItems.Add(new ToolStripSeparator());
 
             var distributeHItem = new ToolStripMenuItem("Distribute Horizontally");
+            distributeHItem.ShortcutKeys = Keys.Control | Keys.Shift | Keys.H;
             distributeHItem.Click += (s, e) => nodeEditor.DistributeSelectionHorizontally();
             editButton.DropDownItems.Add(distributeHItem);
 
             var distributeVItem = new ToolStripMenuItem("Distribute Vertically");
+            distributeVItem.ShortcutKeys = Keys.Control | Keys.Shift | Keys.J;
             distributeVItem.Click += (s, e) => nodeEditor.DistributeSelectionVertically();
             editButton.DropDownItems.Add(distributeVItem);
 
@@ -317,6 +334,7 @@ namespace FlowNode
 
             // 选中节点变化时刷新属性面板
             nodeEditor.SelectionChanged += RefreshPropertyPanel;
+            nodeEditor.GraphChanged += RefreshPropertyPanel;
         }
 
         private void RefreshPropertyPanel()

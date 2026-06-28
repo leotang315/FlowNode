@@ -117,6 +117,38 @@ namespace FlowNode.node
             return node;
         }
 
+        /// <summary>若节点为 Get/Set 变量节点，返回其变量元数据。</summary>
+        public static bool TryGetVarNodeInfo(NodeBase node, out string varName, out Type varType, out bool isSet)
+        {
+            if (node is GetObjectNode getNode)
+            {
+                varName = getNode.VariableName;
+                varType = getNode.VariableType;
+                isSet = false;
+                return true;
+            }
+
+            if (node is SetObjectNode setNode)
+            {
+                varName = setNode.VariableName;
+                varType = setNode.VariableType;
+                isSet = true;
+                return true;
+            }
+
+            varName = null;
+            varType = null;
+            isSet = false;
+            return false;
+        }
+
+        /// <summary>根据剪贴板/序列化中的变量元数据重建变量节点。</summary>
+        public static NodeBase CreateVarNodeFromInfo(string varName, string varTypeName, bool isSet)
+        {
+            var varType = Type.GetType(varTypeName) ?? typeof(object);
+            return CreateVarNode(varName, varType, isSet);
+        }
+
         public static void RegisterNodeInfo(NodeInfo nodeInfo)
         {
             string path;

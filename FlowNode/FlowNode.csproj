@@ -52,6 +52,7 @@
     <Compile Include="app\command\CommandManager.cs" />
     <Compile Include="app\command\DataObjectCommands.cs" />
     <Compile Include="app\command\NodeDataCommands.cs" />
+    <Compile Include="app\command\NodePropertyCommands.cs" />
     <Compile Include="app\command\NodeViewCommands.cs" />
     <Compile Include="app\node\IntTest.cs" />
     <Compile Include="app\serialization\NodeSerializationData.cs" />
