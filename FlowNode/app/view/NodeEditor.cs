@@ -509,6 +509,12 @@ namespace FlowNode
             }
         }
 
+        /// <summary>当前图内容的 SHA256 指纹，供 dirty 智能比对。</summary>
+        public string ComputeContentFingerprint()
+        {
+            return serializationService.ComputeContentFingerprint();
+        }
+
         /// <summary>
         /// 清空当前图，回到空白文档状态（节点、连接、全局变量、选中、撤销历史全部清空）。
         /// </summary>

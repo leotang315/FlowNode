@@ -13,6 +13,22 @@ namespace FlowNode.app.serialization
         public List<NodeData> Nodes { get; set; } = new List<NodeData>();
         public List<ConnectorData> Connectors { get; set; } = new List<ConnectorData>();
         public List<NodeViewData> ViewData { get; set; } = new List<NodeViewData>();
+        /// <summary>NodeManager 全局变量（名称、类型、当前值）。</summary>
+        public List<DataObjectData> DataObjects { get; set; } = new List<DataObjectData>();
+    }
+
+    /// <summary>
+    /// 全局变量的序列化数据
+    /// </summary>
+    [Serializable]
+    public class DataObjectData
+    {
+        public string Key { get; set; }
+        /// <summary>变量声明类型的 AssemblyQualifiedName。</summary>
+        public string TypeName { get; set; }
+        public string Value { get; set; }
+        /// <summary>实际值类型的 FullName（与 PinData.ValueTypeName 一致）。</summary>
+        public string ValueTypeName { get; set; }
     }
 
     /// <summary>

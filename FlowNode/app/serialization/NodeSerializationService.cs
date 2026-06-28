@@ -1,6 +1,7 @@
 using System;
+using System.Globalization;
 using System.IO;
-using System.Runtime.Serialization.Formatters.Binary;
+using System.Security.Cryptography;
 using System.Xml.Serialization;
 using System.Collections.Generic;
 using System.Linq;
@@ -46,15 +47,41 @@ namespace FlowNode.app.serialization
             }
         }
 
-        private NodeGraphData SerializeGraph()
+        /// <summary>
+        /// 计算当前图内容的 SHA256 指纹，用于判断是否与上次保存/加载状态一致。
+        /// 使用稳定节点 Id（按列表顺序），与磁盘文件中的 GUID Id 无关。
+        /// </summary>
+        public string ComputeContentFingerprint()
+        {
+            var graphData = SerializeGraph(useStableNodeIds: true);
+            graphData.DataObjects = graphData.DataObjects
+                .OrderBy(d => d.Key, StringComparer.Ordinal)
+                .ToList();
+
+            using (var stream = new MemoryStream())
+            {
+                var serializer = new XmlSerializer(typeof(NodeGraphData));
+                serializer.Serialize(stream, graphData);
+                using (var sha = SHA256.Create())
+                {
+                    return Convert.ToBase64String(sha.ComputeHash(stream.ToArray()));
+                }
+            }
+        }
+
+        private NodeGraphData SerializeGraph(bool useStableNodeIds = false)
         {
             var graphData = new NodeGraphData();
             var nodeIdMap = new Dictionary<INode, string>();
+            var nodeIndex = 0;
 
             // 序列化节点
             foreach (var node in nodeManager.getNodes())
             {
-                var nodeId = Guid.NewGuid().ToString();
+                var nodeId = useStableNodeIds
+                    ? nodeIndex.ToString(CultureInfo.InvariantCulture)
+                    : Guid.NewGuid().ToString();
+                nodeIndex++;
                 nodeIdMap[node] = nodeId;
 
                 var nodeData = new NodeData
@@ -107,6 +134,27 @@ namespace FlowNode.app.serialization
                 });
             }
 
+            foreach (var key in nodeManager.GetAllDataObjectKeys().OrderBy(k => k, StringComparer.Ordinal))
+            {
+                var value = nodeManager.GetDataObject(key);
+                var type = nodeManager.GetDataObjectType(key);
+                if (type == null)
+                    continue;
+
+                var data = new DataObjectData
+                {
+                    Key = key,
+                    TypeName = type.AssemblyQualifiedName
+                };
+                if (value != null)
+                {
+                    data.Value = Convert.ToString(value, CultureInfo.InvariantCulture);
+                    data.ValueTypeName = value.GetType().FullName;
+                }
+
+                graphData.DataObjects.Add(data);
+            }
+
             return graphData;
         }
 
@@ -115,6 +163,28 @@ namespace FlowNode.app.serialization
             // 清除现有数据
             nodeManager.clear();
             nodeViews.Clear();
+
+            if (graphData.DataObjects != null)
+            {
+                foreach (var data in graphData.DataObjects)
+                {
+                    if (string.IsNullOrEmpty(data.Key) || string.IsNullOrEmpty(data.TypeName))
+                        continue;
+
+                    var type = Type.GetType(data.TypeName);
+                    if (type == null)
+                        continue;
+
+                    object value = null;
+                    if (data.Value != null)
+                    {
+                        value = PinValueConverter.ConvertStringToValue(
+                            data.Value, data.ValueTypeName, type);
+                    }
+
+                    nodeManager.SetDataObject(data.Key, value, type);
+                }
+            }
 
             var nodeMap = new Dictionary<string, INode>();
 

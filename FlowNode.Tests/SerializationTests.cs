@@ -142,11 +142,13 @@ namespace FlowNode.Tests
                 svc.SaveToFile(temp);
 
                 var svc2 = NewService(out var mgr2);
-                mgr2.SetDataObject("score", 99, typeof(int));
                 svc2.LoadFromFile(temp);
 
                 Assert.AreEqual(3, mgr2.getNodes().Count);
                 Assert.AreEqual(1, mgr2.getConnectors().Count);
+
+                Assert.AreEqual(99, Convert.ToInt32(mgr2.GetDataObject("score")), "全局变量 score 取值应往返");
+                Assert.AreEqual(typeof(int), mgr2.GetDataObjectType("score"));
 
                 var loadedGet = mgr2.getNodes().OfType<GetObjectNode>().Single();
                 Assert.AreEqual("score", loadedGet.VariableName);
@@ -161,6 +163,49 @@ namespace FlowNode.Tests
             {
                 File.Delete(temp);
             }
+        }
+
+        [Test]
+        public void SaveLoad_RoundTrips_GlobalDataObjectValues()
+        {
+            var svc = NewService(out var mgr);
+
+            mgr.SetDataObject("name", "alice", typeof(string));
+            mgr.SetDataObject("ratio", 0.75, typeof(double));
+            mgr.SetDataObject("enabled", true, typeof(bool));
+
+            var temp = Path.GetTempFileName();
+            try
+            {
+                svc.SaveToFile(temp);
+
+                var svc2 = NewService(out var mgr2);
+                svc2.LoadFromFile(temp);
+
+                Assert.AreEqual("alice", mgr2.GetDataObject("name"));
+                Assert.AreEqual(0.75, Convert.ToDouble(mgr2.GetDataObject("ratio")), 1e-9);
+                Assert.AreEqual(true, mgr2.GetDataObject("enabled"));
+            }
+            finally
+            {
+                File.Delete(temp);
+            }
+        }
+
+        [Test]
+        public void ComputeContentFingerprint_IsStableForSameGraph()
+        {
+            var svc = NewService(out var mgr);
+
+            var addPath = NodeFactory.GetFunctionNodePaths().First(p => p.EndsWith("add"));
+            var add = NodeFactory.CreateNode(addPath);
+            mgr.addNode(add);
+            mgr.SetDataObject("x", 1, typeof(int));
+
+            var fp1 = svc.ComputeContentFingerprint();
+            var fp2 = svc.ComputeContentFingerprint();
+
+            Assert.AreEqual(fp1, fp2, "相同图内容指纹应一致");
         }
     }
 }

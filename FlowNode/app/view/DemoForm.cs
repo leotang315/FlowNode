@@ -27,6 +27,7 @@ namespace FlowNode
         private TextBox logTextBox;
         private string currentFilePath;
         private bool isDirty;
+        private string cleanContentFingerprint;
         private const int MaxRecentFiles = 8;
         private readonly List<string> recentFiles = new List<string>();
         private ToolStripMenuItem recentFilesMenu;
@@ -56,7 +57,25 @@ namespace FlowNode
         private void WireDirtyTracking()
         {
             FormClosing += DemoForm_FormClosing;
-            nodeEditor.GraphChanged += MarkDirty;
+            nodeEditor.GraphChanged += OnGraphChanged;
+            CaptureCleanFingerprint();
+        }
+
+        private void CaptureCleanFingerprint()
+        {
+            cleanContentFingerprint = nodeEditor.ComputeContentFingerprint();
+        }
+
+        private void OnGraphChanged()
+        {
+            if (cleanContentFingerprint != null &&
+                nodeEditor.ComputeContentFingerprint() == cleanContentFingerprint)
+            {
+                ClearDirty();
+                return;
+            }
+
+            MarkDirty();
         }
 
         private void MarkDirty()
@@ -389,6 +408,7 @@ namespace FlowNode
             currentFilePath = null;
             dataView?.RefreshList();
             propertyPanel?.ClearProperties();
+            CaptureCleanFingerprint();
             ClearDirty();
         }
 
@@ -432,6 +452,7 @@ namespace FlowNode
                 currentFilePath = filePath;
                 dataView?.RefreshList();
                 propertyPanel?.ClearProperties();
+                CaptureCleanFingerprint();
                 ClearDirty();
                 AddRecentFile(filePath);
                 UpdateTitle();
@@ -537,6 +558,7 @@ namespace FlowNode
             try
             {
                 nodeEditor.SaveToFile(currentFilePath);
+                CaptureCleanFingerprint();
                 ClearDirty();
                 AddRecentFile(currentFilePath);
             }
@@ -567,6 +589,7 @@ namespace FlowNode
                 {
                     nodeEditor.SaveToFile(saveDialog.FileName);
                     currentFilePath = saveDialog.FileName;
+                    CaptureCleanFingerprint();
                     ClearDirty();
                     AddRecentFile(currentFilePath);
                 }
