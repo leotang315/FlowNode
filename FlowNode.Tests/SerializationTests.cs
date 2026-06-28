@@ -193,6 +193,36 @@ namespace FlowNode.Tests
         }
 
         [Test]
+        public void SaveLoad_RoundTrips_SwitchCaseCount()
+        {
+            var svc = NewService(out var mgr);
+
+            var switchPath = NodeFactory.GetSystemNodePaths().First(p => p.EndsWith("Switch"));
+            var sw = (SwitchNode)NodeFactory.CreateNode(switchPath);
+            sw.CaseCount = 5;
+            sw.SyncCasePins(null);
+            mgr.addNode(sw);
+
+            var temp = Path.GetTempFileName();
+            try
+            {
+                svc.SaveToFile(temp);
+
+                var svc2 = NewService(out var mgr2);
+                svc2.LoadFromFile(temp);
+
+                var loaded = (SwitchNode)mgr2.getNodes().Single();
+                Assert.AreEqual(5, loaded.CaseCount);
+                Assert.IsNotNull(loaded.findPin("Case4"));
+                Assert.IsNull(loaded.findPin("Case5"));
+            }
+            finally
+            {
+                File.Delete(temp);
+            }
+        }
+
+        [Test]
         public void ComputeContentFingerprint_IsStableForSameGraph()
         {
             var svc = NewService(out var mgr);

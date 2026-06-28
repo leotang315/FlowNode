@@ -56,5 +56,28 @@ namespace FlowNode.Tests
             cmd.Undo();
             Assert.AreEqual(0, node.findPin("a").data);
         }
+
+        [Test]
+        public void SetNodeProperty_UndoRedo_SyncsSwitchCasePins()
+        {
+            var mgr = new NodeManager();
+            var sw = new SwitchNode { CaseCount = 2 };
+            sw.init();
+            mgr.addNode(sw);
+
+            var cmd = new SetNodePropertyCommand(sw, "CaseCount", 2, 5);
+            cmd.Execute();
+            sw.SyncCasePins(mgr);
+
+            Assert.AreEqual(5, sw.CaseCount);
+            Assert.IsNotNull(sw.findPin("Case4"));
+            Assert.IsNull(sw.findPin("Case5"));
+
+            cmd.Undo();
+            sw.SyncCasePins(mgr);
+
+            Assert.AreEqual(2, sw.CaseCount);
+            Assert.IsNull(sw.findPin("Case2"));
+        }
     }
 }
