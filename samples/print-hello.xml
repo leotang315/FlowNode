@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<NodeGraphData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Nodes>
+    <NodeData>
+      <Id>81d2f060-1109-4ae6-ab49-f25aaa79a69e</Id>
+      <Type>FlowNode.node.PrintNode</Type>
+      <Name>Print</Name>
+      <IsAutoRun>false</IsAutoRun>
+      <NodePath>/system/Debug/Print</NodePath>
+      <VarIsSet>false</VarIsSet>
+      <Properties />
+      <Pins>
+        <PinData>
+          <Name>Input</Name>
+          <Direction>Input</Direction>
+          <PinType>Execute</PinType>
+        </PinData>
+        <PinData>
+          <Name>Output</Name>
+          <Direction>Output</Direction>
+          <PinType>Execute</PinType>
+        </PinData>
+        <PinData>
+          <Name>Value</Name>
+          <Direction>Input</Direction>
+          <PinType>Data</PinType>
+          <DataType>System.Object</DataType>
+          <DefaultValue>hello-sample</DefaultValue>
+          <ValueTypeName>System.String</ValueTypeName>
+        </PinData>
+      </Pins>
+    </NodeData>
+  </Nodes>
+  <Connectors />
+  <ViewData />
+  <DataObjects />
+</NodeGraphData>

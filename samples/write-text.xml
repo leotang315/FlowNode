@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<NodeGraphData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Nodes>
+    <NodeData>
+      <Id>477df46e-75cb-44fa-841b-b5c9d1da8c53</Id>
+      <Type>FlowNode.node.WriteTextNode</Type>
+      <Name>Write Text</Name>
+      <IsAutoRun>false</IsAutoRun>
+      <VarIsSet>false</VarIsSet>
+      <Properties>
+        <PropertyData>
+          <Key>Append</Key>
+          <Value>False</Value>
+          <TypeName>System.Boolean</TypeName>
+        </PropertyData>
+      </Properties>
+      <Pins>
+        <PinData>
+          <Name>Input</Name>
+          <Direction>Input</Direction>
+          <PinType>Execute</PinType>
+        </PinData>
+        <PinData>
+          <Name>Output</Name>
+          <Direction>Output</Direction>
+          <PinType>Execute</PinType>
+        </PinData>
+        <PinData>
+          <Name>Path</Name>
+          <Direction>Input</Direction>
+          <PinType>Data</PinType>
+          <DataType>System.String</DataType>
+          <DefaultValue>output.txt</DefaultValue>
+          <ValueTypeName>System.String</ValueTypeName>
+        </PinData>
+        <PinData>
+          <Name>Content</Name>
+          <Direction>Input</Direction>
+          <PinType>Data</PinType>
+          <DataType>System.String</DataType>
+          <DefaultValue>written by FlowNode sample graph</DefaultValue>
+          <ValueTypeName>System.String</ValueTypeName>
+        </PinData>
+      </Pins>
+    </NodeData>
+  </Nodes>
+  <Connectors />
+  <ViewData />
+  <DataObjects />
+</NodeGraphData>

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -59,6 +60,22 @@ namespace FlowNode.Tests
                 Path.Combine(Path.GetTempPath(), "flownode-missing-" + Path.GetRandomFileName() + ".xml"));
 
             Assert.AreEqual(GraphRunner.ExitIo, exitCode);
+        }
+
+        [Test]
+        public void GraphRunner_RunsSamplePrintHello()
+        {
+            var samplePath = Path.GetFullPath(Path.Combine(
+                AppDomain.CurrentDomain.BaseDirectory,
+                "..", "..", "..", "..", "samples", "print-hello.xml"));
+
+            Assert.IsTrue(File.Exists(samplePath), "缺少 samples/print-hello.xml");
+
+            var logs = new List<string>();
+            var exitCode = GraphRunner.RunFile(samplePath, log: logs.Add);
+
+            Assert.AreEqual(GraphRunner.ExitOk, exitCode);
+            Assert.IsTrue(logs.Any(l => l.Contains("hello-sample")));
         }
 
         private static void BuildPrintGraph(string filePath)
