@@ -5,7 +5,7 @@ using FlowNode.app.view;
 using FlowNode.node;
 using NUnit.Framework;
 
-namespace FlowNode.Tests
+namespace FlowNode.Tests.Editor
 {
     [TestFixture]
     public class CommandManagerTests

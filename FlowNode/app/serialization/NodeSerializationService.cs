@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using FlowNode.app.view;
 using FlowNode.node;
 
@@ -59,18 +60,41 @@ namespace FlowNode.app.serialization
             nodeViews.Clear();
             var nodeMap = graphSerializer.DeserializeGraph(graphData);
 
-            if (graphData.ViewData == null)
-                return;
+            var positionedNodeIds = new HashSet<string>(StringComparer.Ordinal);
 
-            foreach (var viewData in graphData.ViewData)
+            if (graphData.ViewData != null)
             {
-                if (!nodeMap.TryGetValue(viewData.NodeId, out var node))
+                foreach (var viewData in graphData.ViewData)
+                {
+                    if (string.IsNullOrEmpty(viewData.NodeId))
+                        continue;
+                    if (!nodeMap.TryGetValue(viewData.NodeId, out var node))
+                        continue;
+
+                    var bounds = new Rectangle(viewData.X, viewData.Y, viewData.Width, viewData.Height);
+                    var nodeView = NodeViewFactory.CreateNodeView((NodeBase)node, new Point(bounds.X, bounds.Y));
+                    nodeView.Bounds = bounds;
+                    nodeViews.Add(node, nodeView);
+                    positionedNodeIds.Add(viewData.NodeId);
+                }
+            }
+
+            // CLI / SampleGenerator 生成的图常无 ViewData；为缺失视图的节点自动排布，避免画布空白。
+            var fallbackIndex = 0;
+            foreach (var pair in nodeMap.OrderBy(p => p.Value.Name, StringComparer.Ordinal))
+            {
+                if (positionedNodeIds.Contains(pair.Key))
                     continue;
 
-                var bounds = new Rectangle(viewData.X, viewData.Y, viewData.Width, viewData.Height);
-                var nodeView = NodeViewFactory.CreateNodeView((NodeBase)node, new Point(bounds.X, bounds.Y));
-                nodeView.Bounds = bounds;
-                nodeViews.Add(node, nodeView);
+                const int columnWidth = 240;
+                const int rowHeight = 140;
+                var location = new Point(
+                    40 + (fallbackIndex % 3) * columnWidth,
+                    40 + (fallbackIndex / 3) * rowHeight);
+                fallbackIndex++;
+
+                var nodeView = NodeViewFactory.CreateNodeView((NodeBase)pair.Value, location);
+                nodeViews.Add(pair.Value, nodeView);
             }
         }
     }

@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Windows.Forms;
 using System.Drawing;
 using FlowNode.node;
@@ -10,14 +11,19 @@ namespace FlowNode
     {
         private readonly NodeManager nodeManager;
         private readonly CommandManager commandManager;
+        private readonly Action onDataChanged;
         public ListView listView;
         private Button addButton;
         private Button closeButton;
 
-        public DataViewControl(NodeManager nodeManager, CommandManager commandManager)
+        public DataViewControl(
+            NodeManager nodeManager,
+            CommandManager commandManager,
+            Action onDataChanged = null)
         {
             this.nodeManager = nodeManager;
             this.commandManager = commandManager;
+            this.onDataChanged = onDataChanged;
             InitializeComponents();
             UpdateListView();
         }
@@ -27,7 +33,6 @@ namespace FlowNode
             Text = "Data Object Manager";
             Size = new Size(200, 200);
 
-            // 创建 TableLayoutPanel
             var tableLayoutPanel = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
@@ -35,11 +40,10 @@ namespace FlowNode
                 RowCount = 3,
                 AutoSize = true
             };
-            tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 70F)); // ListView 占 70%
-            tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F)); // 按钮占固定高度
-            tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F)); // 关闭按钮占固定高度
+            tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 70F));
+            tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
+            tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
 
-            // 创建 ListView
             listView = new ListView
             {
                 View = View.Details,
@@ -52,14 +56,17 @@ namespace FlowNode
             listView.Columns.Add("Value", 100);
             listView.Columns.Add("Type", 50);
 
-            // 添加右键菜单
+            listView.DoubleClick += (s, e) => EditSelectedItem();
+
             var contextMenu = new ContextMenuStrip();
+            var editMenuItem = new ToolStripMenuItem("Edit");
+            editMenuItem.Click += (s, e) => EditSelectedItem();
+            contextMenu.Items.Add(editMenuItem);
             var deleteMenuItem = new ToolStripMenuItem("Delete");
             deleteMenuItem.Click += DeleteMenuItem_Click;
             contextMenu.Items.Add(deleteMenuItem);
             listView.ContextMenuStrip = contextMenu;
 
-            // 创建按钮
             addButton = new Button
             {
                 Text = "Add New",
@@ -74,21 +81,22 @@ namespace FlowNode
                 DialogResult = DialogResult.OK
             };
 
-            // 将控件添加到 TableLayoutPanel
             tableLayoutPanel.Controls.Add(listView, 0, 0);
             tableLayoutPanel.Controls.Add(addButton, 0, 1);
             tableLayoutPanel.Controls.Add(closeButton, 0, 2);
 
-            // 将 TableLayoutPanel 添加到 UserControl
             Controls.Add(tableLayoutPanel);
         }
 
-        /// <summary>
-        /// 供外部（如新建/打开文件后）刷新数据对象列表。
-        /// </summary>
         public void RefreshList()
         {
             UpdateListView();
+        }
+
+        private void NotifyDataChanged()
+        {
+            nodeManager.SyncGetObjectOutputPins();
+            onDataChanged?.Invoke();
         }
 
         private void UpdateListView()
@@ -106,6 +114,37 @@ namespace FlowNode
             }
         }
 
+        private void EditSelectedItem()
+        {
+            if (listView.SelectedItems.Count == 0)
+                return;
+
+            var key = listView.SelectedItems[0].Text;
+            var type = nodeManager.GetDataObjectType(key);
+            if (type == null)
+                return;
+
+            var value = nodeManager.GetDataObject(key);
+            using (var form = new DataEditForm(key, value, type, editMode: true))
+            {
+                if (form.ShowDialog() != DialogResult.OK)
+                    return;
+
+                try
+                {
+                    commandManager.ExecuteCommand(new UpdateDataObjectCommand(
+                        nodeManager, key, form.ObjectValue, type));
+                    UpdateListView();
+                    NotifyDataChanged();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error updating data object: {ex.Message}", "Error",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
         private void AddButton_Click(object sender, EventArgs e)
         {
             using (var form = new DataEditForm())
@@ -114,18 +153,17 @@ namespace FlowNode
                 {
                     try
                     {
-                        var command = new AddDataObjectCommand(
-                            nodeManager, 
-                            form.ObjectKey, 
-                            form.ObjectValue, 
-                            form.ObjectType
-                        );
-                        commandManager.ExecuteCommand(command);
+                        commandManager.ExecuteCommand(new AddDataObjectCommand(
+                            nodeManager,
+                            form.ObjectKey,
+                            form.ObjectValue,
+                            form.ObjectType));
                         UpdateListView();
+                        NotifyDataChanged();
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Error adding data object: {ex.Message}", "Error", 
+                        MessageBox.Show($"Error adding data object: {ex.Message}", "Error",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
@@ -137,16 +175,17 @@ namespace FlowNode
             if (listView.SelectedItems.Count > 0)
             {
                 var key = listView.SelectedItems[0].Text;
-                var command = new RemoveDataObjectCommand(nodeManager, key);
-                commandManager.ExecuteCommand(command);
+                commandManager.ExecuteCommand(new RemoveDataObjectCommand(nodeManager, key));
                 UpdateListView();
+                NotifyDataChanged();
             }
         }
     }
 
-    // 用于添加/编辑数据对象的对话框
     public class DataEditForm : Form
     {
+        private readonly bool editMode;
+        private readonly Type objectType;
         private TextBox keyTextBox;
         private TextBox valueTextBox;
         private ComboBox typeComboBox;
@@ -154,31 +193,71 @@ namespace FlowNode
         private Button cancelButton;
 
         public string ObjectKey => keyTextBox.Text;
-        public object ObjectValue => Convert.ChangeType(valueTextBox.Text, ObjectType);
+
+        public object ObjectValue
+        {
+            get
+            {
+                var type = editMode ? objectType : ObjectType;
+                return Convert.ChangeType(valueTextBox.Text, type, CultureInfo.InvariantCulture);
+            }
+        }
+
         public Type ObjectType => Type.GetType($"System.{typeComboBox.SelectedItem}");
 
         public DataEditForm()
         {
+            editMode = false;
             InitializeComponents();
+        }
+
+        public DataEditForm(string key, object value, Type type, bool editMode)
+        {
+            this.editMode = editMode;
+            objectType = type;
+            InitializeComponents();
+            Text = editMode ? "Edit Data Object" : "Add Data Object";
+            keyTextBox.Text = key;
+            valueTextBox.Text = value != null
+                ? Convert.ToString(value, CultureInfo.InvariantCulture)
+                : string.Empty;
+            SelectType(type);
+            keyTextBox.ReadOnly = editMode;
+            typeComboBox.Enabled = !editMode;
+        }
+
+        private void SelectType(Type type)
+        {
+            var name = type?.Name ?? "String";
+            for (int i = 0; i < typeComboBox.Items.Count; i++)
+            {
+                if (string.Equals(typeComboBox.Items[i]?.ToString(), name, StringComparison.Ordinal))
+                {
+                    typeComboBox.SelectedIndex = i;
+                    return;
+                }
+            }
+
+            typeComboBox.SelectedIndex = 0;
         }
 
         private void InitializeComponents()
         {
             Text = "Add Data Object";
-            Size = new Size(200, 200);
+            Size = new Size(320, 200);
             StartPosition = FormStartPosition.CenterParent;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
             MinimizeBox = false;
 
-            var keyLabel = new Label { Text = "Name:", Left = 10, Top = 20, Width=50 };
-            keyTextBox = new TextBox { Left = 70, Top = 20, Width = 100 };
+            var keyLabel = new Label { Text = "Name:", Left = 10, Top = 20, Width = 50 };
+            keyTextBox = new TextBox { Left = 70, Top = 20, Width = 220 };
 
             var valueLabel = new Label { Text = "Value:", Left = 10, Top = 50, Width = 50 };
-            valueTextBox = new TextBox { Left = 70, Top = 50, Width = 100 };
+            valueTextBox = new TextBox { Left = 70, Top = 50, Width = 220 };
 
             var typeLabel = new Label { Text = "Type:", Left = 10, Top = 80, Width = 50 };
-            typeComboBox = new ComboBox { Left = 70, Top = 80, Width = 100 };
+            typeComboBox = new ComboBox { Left = 70, Top = 80, Width = 220 };
             typeComboBox.Items.AddRange(new object[] { "String", "Int32", "Double", "Boolean" });
             typeComboBox.SelectedIndex = 0;
 
@@ -186,7 +265,7 @@ namespace FlowNode
             {
                 Text = "OK",
                 DialogResult = DialogResult.OK,
-                Left = 100,
+                Left = 130,
                 Top = 120
             };
 
@@ -194,7 +273,7 @@ namespace FlowNode
             {
                 Text = "Cancel",
                 DialogResult = DialogResult.Cancel,
-                Left = 200,
+                Left = 210,
                 Top = 120
             };
 
@@ -209,4 +288,4 @@ namespace FlowNode
             CancelButton = cancelButton;
         }
     }
-} 
+}

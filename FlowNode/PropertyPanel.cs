@@ -101,16 +101,27 @@ namespace FlowNode
 
 
             ICommand command;
-            var pin = currentNode.findPin(matched.Name);
-            if (pin != null && pin.direction == PinDirection.Input && pin.pinType == PinType.Data)
+            if (currentNode is GetObjectNode getNode && matched.Name == "Value")
+            {
+                command = new UpdateDataObjectCommand(
+                    editor.NodeManager,
+                    getNode.VariableName,
+                    newValue,
+                    getNode.VariableType);
+            }
+            else if (currentNode.findPin(matched.Name) is Pin pin
+                     && pin.direction == PinDirection.Input
+                     && pin.pinType == PinType.Data)
+            {
                 command = new SetPinDataCommand(currentNode, matched.Name, oldValue, newValue);
+            }
             else
+            {
                 command = new SetNodePropertyCommand(currentNode, matched.Name, oldValue, newValue);
-
-
+            }
 
             editor.CommandManager.ExecuteCommand(command);
-
+            editor.NodeManager.SyncGetObjectOutputPins();
             editor.InvalidateNode(currentNode);
 
         }
@@ -145,7 +156,7 @@ namespace FlowNode
 
             currentNode = node;
 
-            propertyGrid.SelectedObject = new NodePropertySheet(node);
+            propertyGrid.SelectedObject = new NodePropertySheet(node, editor.NodeManager);
 
         }
 

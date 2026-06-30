@@ -2,7 +2,7 @@
 <NodeGraphData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <Nodes>
     <NodeData>
-      <Id>cdf5727e-292f-440c-b0c2-764d3a95de1c</Id>
+      <Id>2608adfb-446b-431d-979d-af0c67f17645</Id>
       <Type>FlowNode.node.WriteTextNode</Type>
       <Name>Write Text</Name>
       <IsAutoRun>false</IsAutoRun>

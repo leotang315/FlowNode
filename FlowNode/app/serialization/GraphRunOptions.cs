@@ -13,6 +13,9 @@ namespace FlowNode.app.serialization
         /// <summary>执行前写入 NodeManager 的全局变量（会覆盖 XML 中同名项）。</summary>
         public IDictionary<string, object> Variables { get; set; }
 
+        /// <summary>执行前切换进程当前目录（相对路径读写文件时使用），执行后恢复。</summary>
+        public string WorkingDirectory { get; set; }
+
         public void ApplyTo(NodeManager manager)
         {
             if (Variables == null || manager == null)

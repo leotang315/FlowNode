@@ -13,6 +13,7 @@ namespace FlowNode.node
         void pushNextNode(INode node);
         void SetDataObject(string key, object obj, Type type);
         object GetDataObject(string key);
+        Type GetDataObjectType(string key);
         void run();
 
         /// <summary>向执行日志写一条消息（供 Print 等节点输出到日志面板）。</summary>

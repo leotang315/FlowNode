@@ -5,10 +5,9 @@
     <OutputType>Exe</OutputType>
     <LangVersion>latest</LangVersion>
     <IsPackable>false</IsPackable>
-    <AssemblyName>FlowNode.Tests</AssemblyName>
-    <RootNamespace>FlowNode.Tests</RootNamespace>
-    <StartupObject>FlowNode.Tests.TestRunner</StartupObject>
-    <!-- 仅引用 FlowNode.Core；编辑器相关用例见 FlowNode.Tests.Editor -->
+    <AssemblyName>FlowNode.Tests.Editor</AssemblyName>
+    <RootNamespace>FlowNode.Tests.Editor</RootNamespace>
+    <StartupObject>FlowNode.Tests.Editor.TestRunner</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FlowNode.Core\FlowNode.Core.csproj" />
+    <ProjectReference Include="..\FlowNode\FlowNode.csproj" />
   </ItemGroup>
 
 </Project>

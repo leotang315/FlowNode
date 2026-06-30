@@ -13,14 +13,16 @@ namespace FlowNode.node
     {
         private static readonly HashSet<string> HiddenPropertyNames = new HashSet<string>(StringComparer.Ordinal)
         {
-            "Pins", "NodePath", "method", "self"
+            "Pins", "NodePath", "method", "self", "VariableName", "VariableType"
         };
 
         public NodeBase Node { get; }
+        public NodeManager NodeManager { get; }
 
-        public NodePropertySheet(NodeBase node)
+        public NodePropertySheet(NodeBase node, NodeManager nodeManager = null)
         {
             Node = node ?? throw new ArgumentNullException(nameof(node));
+            NodeManager = nodeManager;
         }
 
         public AttributeCollection GetAttributes() => TypeDescriptor.GetAttributes(Node, true);
@@ -48,6 +50,13 @@ namespace FlowNode.node
             }
 
             var existingNames = new HashSet<string>(list.Select(p => p.Name), StringComparer.Ordinal);
+
+            if (Node is GetObjectNode getNode && NodeManager != null)
+            {
+                list.Add(new GlobalVariablePropertyDescriptor(getNode, NodeManager));
+                existingNames.Add("Value");
+            }
+
             foreach (var pin in Node.Pins)
             {
                 if (pin.direction != PinDirection.Input || pin.pinType != PinType.Data)
@@ -125,5 +134,66 @@ namespace FlowNode.node
         }
 
         public override bool ShouldSerializeValue(object component) => pin.data != null;
+    }
+
+    internal sealed class GlobalVariablePropertyDescriptor : PropertyDescriptor
+    {
+        private readonly GetObjectNode node;
+        private readonly NodeManager manager;
+
+        public GlobalVariablePropertyDescriptor(GetObjectNode node, NodeManager manager)
+            : base("Value", new System.Attribute[]
+            {
+                new CategoryAttribute("Global Variable"),
+                new DisplayNameAttribute(node.VariableName),
+                new DescriptionAttribute("全局变量取值，Get 节点执行时从此读取。")
+            })
+        {
+            this.node = node;
+            this.manager = manager;
+        }
+
+        public string VariableName => node.VariableName;
+        public Type VariableType => node.VariableType;
+
+        public override Type ComponentType => typeof(NodeBase);
+        public override bool IsReadOnly => false;
+
+        public override Type PropertyType => node.VariableType ?? typeof(object);
+
+        public override bool CanResetValue(object component) => false;
+
+        public override object GetValue(object component)
+        {
+            if (manager.GetDataObjectType(node.VariableName) == null)
+            {
+                if (PropertyType.IsValueType)
+                    return Activator.CreateInstance(PropertyType);
+                return null;
+            }
+
+            return manager.GetDataObject(node.VariableName);
+        }
+
+        public override void ResetValue(object component) { }
+
+        public override void SetValue(object component, object value)
+        {
+            if (value == null || PropertyType.IsInstanceOfType(value))
+            {
+                manager.SetDataObject(node.VariableName, value, PropertyType);
+            }
+            else
+            {
+                manager.SetDataObject(
+                    node.VariableName,
+                    Convert.ChangeType(value, PropertyType, CultureInfo.InvariantCulture),
+                    PropertyType);
+            }
+
+            node.RefreshOutputFrom(manager);
+        }
+
+        public override bool ShouldSerializeValue(object component) => true;
     }
 }

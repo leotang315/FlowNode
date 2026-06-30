@@ -219,7 +219,14 @@ namespace FlowNode.app.serialization
                 }
             }
 
+            SyncGetObjectOutputPins(nodeManager);
+
             return nodeMap;
+        }
+
+        private static void SyncGetObjectOutputPins(NodeManager manager)
+        {
+            manager.SyncGetObjectOutputPins();
         }
     }
 }

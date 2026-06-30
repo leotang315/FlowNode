@@ -2,7 +2,7 @@ using System.Drawing;
 using FlowNode.app.view;
 using NUnit.Framework;
 
-namespace FlowNode.Tests
+namespace FlowNode.Tests.Editor
 {
     [TestFixture]
     public class EditorViewportTests

@@ -66,6 +66,11 @@ namespace FlowNode.app.serialization
             return ExecuteManager(manager, error, log);
         }
 
+        private static int ExecuteManager(NodeManager manager, Action<string> error, Action<string> log)
+        {
+            return ExecuteManager(manager, error, log, workingDirectory: null);
+        }
+
         private static int RunLoadedGraph(
             NodeManager manager,
             string filePath,
@@ -101,10 +106,34 @@ namespace FlowNode.app.serialization
             }
 
             options?.ApplyTo(manager);
-            return ExecuteManager(manager, error, log);
+            return ExecuteManager(manager, error, log, options?.WorkingDirectory);
         }
 
-        private static int ExecuteManager(NodeManager manager, Action<string> error, Action<string> log)
+        private static int ExecuteManager(
+            NodeManager manager,
+            Action<string> error,
+            Action<string> log,
+            string workingDirectory = null)
+        {
+            string previousDirectory = null;
+            if (!string.IsNullOrWhiteSpace(workingDirectory))
+            {
+                previousDirectory = Directory.GetCurrentDirectory();
+                Directory.SetCurrentDirectory(Path.GetFullPath(workingDirectory));
+            }
+
+            try
+            {
+                return ExecuteManagerCore(manager, error, log);
+            }
+            finally
+            {
+                if (previousDirectory != null)
+                    Directory.SetCurrentDirectory(previousDirectory);
+            }
+        }
+
+        private static int ExecuteManagerCore(NodeManager manager, Action<string> error, Action<string> log)
         {
             var errors = manager.Validate();
             if (errors.Count > 0)

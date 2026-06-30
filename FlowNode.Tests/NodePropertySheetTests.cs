@@ -51,5 +51,25 @@ namespace FlowNode.Tests
             Assert.AreEqual(42, node.Value);
             Assert.AreEqual(42, node.findPin("Value").data);
         }
+
+        [Test]
+        public void GetObjectNode_ExposesGlobalVariableValue_InPropertySheet()
+        {
+            var mgr = new NodeManager();
+            mgr.SetDataObject("threshold", 60, typeof(int));
+
+            var get = (GetObjectNode)NodeFactory.CreateVarNode("threshold", typeof(int), isSet: false);
+
+            var sheet = new NodePropertySheet(get, mgr);
+            var valueProp = sheet.GetProperties().Find("Value", false);
+            Assert.IsNotNull(valueProp, "Get 节点应在属性面板暴露全局变量 Value");
+
+            Assert.AreEqual(60, valueProp.GetValue(get));
+
+            valueProp.SetValue(get, 90);
+            Assert.AreEqual(90, mgr.GetDataObject("threshold"));
+            get.RefreshOutputFrom(mgr);
+            Assert.AreEqual("90", get.GetDisplaySubtitle());
+        }
     }
 }

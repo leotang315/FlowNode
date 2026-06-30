@@ -1,15 +1,6 @@
 <#
 .SYNOPSIS
-    Build and run FlowNode.Tests unit tests (covering the pure-logic node/ layer).
-
-.DESCRIPTION
-    - FlowNode targets .NET Framework 4.7.2, so Visual Studio's MSBuild is required
-      (the .NET SDK MSBuild cannot process the legacy .resx files).
-    - Tests are written with NUnit [Test]/Assert but executed by the project's built-in
-      lightweight runner, to avoid a known crash in the NUnit3 engine when it enumerates
-      .NET 7 runtime directories on this machine.
-    - The script points the NuGet global packages folder back to
-      %USERPROFILE%\.nuget\packages so restore works offline.
+    Build and run FlowNode unit tests (Core + Editor).
 
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File scripts/run-tests.ps1
@@ -23,8 +14,6 @@ $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $sln = Join-Path $repoRoot "FlowNode.sln"
 
-# Offline restore: use the real user-level global packages folder
-# (some environments redirect NUGET_PACKAGES to a temporary cache).
 $env:NUGET_PACKAGES = Join-Path $env:USERPROFILE ".nuget\packages"
 
 function Resolve-MSBuild {
@@ -45,9 +34,17 @@ Write-Host "Using MSBuild: $msbuild"
 & $msbuild $sln /t:Restore,Build /p:Configuration=$Configuration /nologo /v:minimal
 if ($LASTEXITCODE -ne 0) { throw "Build failed (exit code $LASTEXITCODE)." }
 
-$testExe = Join-Path $repoRoot "FlowNode.Tests\bin\$Configuration\net472\FlowNode.Tests.exe"
-if (-not (Test-Path $testExe)) { throw "Test executable not found: $testExe" }
+$coreTests = Join-Path $repoRoot "FlowNode.Tests\bin\$Configuration\net472\FlowNode.Tests.exe"
+$editorTests = Join-Path $repoRoot "FlowNode.Tests.Editor\bin\$Configuration\net472\FlowNode.Tests.Editor.exe"
 
-Write-Host "`nRunning tests..." -ForegroundColor Cyan
-& $testExe
+foreach ($exe in @($coreTests, $editorTests)) {
+    if (-not (Test-Path $exe)) { throw "Test executable not found: $exe" }
+}
+
+Write-Host "`nRunning FlowNode.Tests (Core)..." -ForegroundColor Cyan
+& $coreTests
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+Write-Host "`nRunning FlowNode.Tests.Editor..." -ForegroundColor Cyan
+& $editorTests
 exit $LASTEXITCODE

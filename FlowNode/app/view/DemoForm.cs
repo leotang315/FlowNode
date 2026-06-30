@@ -649,7 +649,10 @@ namespace FlowNode
 
         private void InitializeDataView()
         {
-            dataView = new DataViewControl(nodeEditor.NodeManager, nodeEditor.CommandManager);
+            dataView = new DataViewControl(
+                nodeEditor.NodeManager,
+                nodeEditor.CommandManager,
+                () => nodeEditor.Invalidate());
             flowLayoutPanel1.Controls.Add(dataView);
 
             // Add drag & drop event handlers

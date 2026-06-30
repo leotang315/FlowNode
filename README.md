@@ -36,13 +36,13 @@ msbuild FlowNode.sln /p:Configuration=Release
 
 ## 运行测试
 
-`node/` 纯逻辑层由 `FlowNode.Tests` 工程覆盖（NUnit 风格用例）。一键构建并运行：
+`FlowNode.Tests` 仅引用 **FlowNode.Core**（逻辑层）；画布/布局相关用例在 **FlowNode.Tests.Editor**（引用编辑器 WinExe）。一键构建并运行两者：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/run-tests.ps1
 ```
 
-脚本使用 Visual Studio 自带的 MSBuild 构建（以正确处理 .NET Framework 的 `.resx`），并通过工程内置的轻量 runner 执行用例（规避旧版 NUnit3 引擎在本机枚举 .NET 7 运行时目录时的已知崩溃），全部通过时退出码为 0。当前 **151** 个用例。
+当前 **137** 个 Core 用例 + **16** 个 Editor 用例（合计 **153**）。
 
 ## 命令行执行（无 UI）
 
@@ -59,20 +59,34 @@ powershell -ExecutionPolicy Bypass -File scripts/run-tests.ps1
 
 ```powershell
 .\FlowNode.Cli\bin\Debug\net472\FlowNode.Cli.exe samples\print-hello.xml
-.\FlowNode.Cli\bin\Debug\net472\FlowNode.Cli.exe --var count=3 graph.xml
+.\FlowNode.Cli\bin\Debug\net472\FlowNode.Cli.exe --var threshold=60 samples\score-check.xml
 ```
 
-## 嵌入宿主（FlowNode.Core）
+业务示例 **score-check**：读 `samples/score-input.txt`（分数）→ 与 `--var threshold=` 比较 → 分支 → 写 `samples/score-result.txt`。重新生成全部示例：`scripts/generate-samples.ps1`。
+
+## 嵌入宿主（FlowNode.Core + HostDemo）
+
+[`FlowNode.HostDemo`](FlowNode.HostDemo/) 演示在自有程序中引用 Core、注册自定义节点并跑图：
 
 ```csharp
-using FlowNode.hosting;
+using System.Collections.Generic;
 using FlowNode.app.serialization;
+using FlowNode.hosting;
 
 var host = new GraphHost();
 host.RegisterAssembly(typeof(MyNodes).Assembly);
-var result = host.RunFile("graph.xml", new GraphRunOptions {
-    Variables = new Dictionary<string, object> { ["key"] = "value" }
+var result = host.RunFile("samples/score-check.xml", new GraphRunOptions {
+    WorkingDirectory = repoRoot,
+    Variables = new Dictionary<string, object> { ["threshold"] = 60 }
 });
+return result.ExitCode;
+```
+
+构建并运行：
+
+```powershell
+.\FlowNode.HostDemo\bin\Debug\net472\FlowNode.HostDemo.exe
+.\FlowNode.HostDemo\bin\Debug\net472\FlowNode.HostDemo.exe --threshold 90
 ```
 
 ## 快捷键（摘要）
@@ -109,7 +123,9 @@ FlowNode/
 ├── FlowNode.Core/        # 逻辑层类库（node/、函数节点、XML 序列化/执行，无 WinForms）
 ├── FlowNode/             # WinForms 可视化编辑器（画布、命令、属性面板）
 ├── FlowNode.Cli/         # 命令行：加载 XML → 校验 → 执行（无 UI）
-├── FlowNode.Tests/       # 单元测试（151 用例）
+├── FlowNode.HostDemo/    # 嵌入示例：GraphHost + 自定义 [Function] 节点
+├── FlowNode.Tests/       # Core 单元测试（137 用例，仅引 Core）
+├── FlowNode.Tests.Editor/ # 编辑器 UI 测试（16 用例，引 WinExe）
 ├── FlowNode.sln
 ├── scripts/run-tests.ps1
 └── docs/
@@ -122,6 +138,7 @@ FlowNode/
 | **FlowNode.Core** | `NodeManager` 执行引擎、`NodeFactory`、系统/函数节点、`NodeGraphSerializer`（节点/连线/变量，不含布局） |
 | **FlowNode**（编辑器） | `NodeEditor` 画布、`NodeSerializationService`（在 Core 之上读写节点位置） |
 | **FlowNode.Cli** | 无界面批处理执行，适合 CI / 脚本 |
+| **FlowNode.HostDemo** | 宿主嵌入参考实现（仅引 Core） |
 
 源码仍位于 `FlowNode/node/` 与 `FlowNode/app/node/`，由 **FlowNode.Core.csproj** 编译进 `FlowNode.Core.dll`。
 

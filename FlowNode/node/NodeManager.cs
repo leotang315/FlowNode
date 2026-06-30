@@ -467,5 +467,15 @@ namespace FlowNode.node
             dataObjects.Remove(key);
         }
 
+        /// <summary>将所有 Get 变量节点的输出引脚与全局变量同步（改值后刷新画布副标题）。</summary>
+        public void SyncGetObjectOutputPins()
+        {
+            foreach (var node in getNodes())
+            {
+                if (node is GetObjectNode getNode)
+                    getNode.RefreshOutputFrom(this);
+            }
+        }
+
     }
 }
