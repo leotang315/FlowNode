@@ -671,6 +671,9 @@ namespace FlowNode
             }
         }
 
+        /// <summary>最近一次 Open 是否触发了无 ViewData 的自动排布。</summary>
+        public bool LastLoadUsedAutoLayout => serializationService.LastLoadUsedAutoLayout;
+
         /// <summary>当前图内容的 SHA256 指纹，供 dirty 智能比对。</summary>
         public string ComputeContentFingerprint()
         {

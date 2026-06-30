@@ -2,7 +2,7 @@
 <NodeGraphData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <Nodes>
     <NodeData>
-      <Id>fc66f1c1-f3fb-4819-9ffe-af236a59e3f6</Id>
+      <Id>df29efa6-188c-42e9-b070-775a989a2808</Id>
       <Type>FlowNode.node.PrintNode</Type>
       <Name>Print</Name>
       <IsAutoRun>false</IsAutoRun>
@@ -32,6 +32,14 @@
     </NodeData>
   </Nodes>
   <Connectors />
-  <ViewData />
+  <ViewData>
+    <NodeViewData>
+      <NodeId>df29efa6-188c-42e9-b070-775a989a2808</NodeId>
+      <X>40</X>
+      <Y>80</Y>
+      <Width>200</Width>
+      <Height>100</Height>
+    </NodeViewData>
+  </ViewData>
   <DataObjects />
 </NodeGraphData>

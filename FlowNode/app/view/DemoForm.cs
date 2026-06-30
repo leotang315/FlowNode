@@ -487,6 +487,8 @@ namespace FlowNode
             {
                 nodeEditor.NewGraph();
                 nodeEditor.LoadFromFile(filePath);
+                if (nodeEditor.LastLoadUsedAutoLayout)
+                    nodeEditor.ZoomToFitAll();
                 currentFilePath = filePath;
                 dataView?.RefreshList();
                 propertyPanel?.ClearProperties();

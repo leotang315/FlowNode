@@ -93,6 +93,30 @@ namespace FlowNode.Tests
 
             Assert.AreEqual(string.Empty, node.findPin("result").data);
         }
+
+        [Test]
+        public void HttpPost_ReturnsEmpty_ForInvalidUrl()
+        {
+            var path = NodeFactory.GetNodePath().First(p => p.EndsWith("httpPost"));
+            var node = NodeFactory.CreateNode(path);
+            node.findPin("url").data = "not-a-valid-url";
+            node.findPin("body").data = "{\"ok\":true}";
+            node.excute(new NodeManager());
+
+            Assert.AreEqual(string.Empty, node.findPin("result").data);
+        }
+
+        [Test]
+        public void HttpPost_ReturnsEmpty_WhenUrlMissing()
+        {
+            var path = NodeFactory.GetNodePath().First(p => p.EndsWith("httpPost"));
+            var node = NodeFactory.CreateNode(path);
+            node.findPin("url").data = "";
+            node.findPin("body").data = "{}";
+            node.excute(new NodeManager());
+
+            Assert.AreEqual(string.Empty, node.findPin("result").data);
+        }
     }
 
     [TestFixture]

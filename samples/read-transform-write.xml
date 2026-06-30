@@ -2,7 +2,7 @@
 <NodeGraphData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <Nodes>
     <NodeData>
-      <Id>7bbdd8ba-3c76-4dee-96a8-f6de335059c8</Id>
+      <Id>faf47142-a7d1-462c-9aea-a481f436c0f9</Id>
       <Type>FlowNode.node.FunctionNode</Type>
       <Name>readTextFile</Name>
       <IsAutoRun>true</IsAutoRun>
@@ -33,7 +33,7 @@
       </Pins>
     </NodeData>
     <NodeData>
-      <Id>e8f68e8d-edd6-49ce-92b7-93a0c7d73465</Id>
+      <Id>8b20f393-0c54-4717-b650-8395a6b8ee54</Id>
       <Type>FlowNode.node.FunctionNode</Type>
       <Name>concat</Name>
       <IsAutoRun>true</IsAutoRun>
@@ -70,7 +70,7 @@
       </Pins>
     </NodeData>
     <NodeData>
-      <Id>f57bc299-490a-4a15-b3da-0425a3343c53</Id>
+      <Id>1f17e69a-6ab9-436e-83ed-d32ede32efd6</Id>
       <Type>FlowNode.node.WriteTextNode</Type>
       <Name>Write Text</Name>
       <IsAutoRun>false</IsAutoRun>
@@ -114,18 +114,40 @@
   </Nodes>
   <Connectors>
     <ConnectorData>
-      <SourceNodeId>7bbdd8ba-3c76-4dee-96a8-f6de335059c8</SourceNodeId>
+      <SourceNodeId>faf47142-a7d1-462c-9aea-a481f436c0f9</SourceNodeId>
       <SourcePinName>result</SourcePinName>
-      <TargetNodeId>e8f68e8d-edd6-49ce-92b7-93a0c7d73465</TargetNodeId>
+      <TargetNodeId>8b20f393-0c54-4717-b650-8395a6b8ee54</TargetNodeId>
       <TargetPinName>a</TargetPinName>
     </ConnectorData>
     <ConnectorData>
-      <SourceNodeId>e8f68e8d-edd6-49ce-92b7-93a0c7d73465</SourceNodeId>
+      <SourceNodeId>8b20f393-0c54-4717-b650-8395a6b8ee54</SourceNodeId>
       <SourcePinName>result</SourcePinName>
-      <TargetNodeId>f57bc299-490a-4a15-b3da-0425a3343c53</TargetNodeId>
+      <TargetNodeId>1f17e69a-6ab9-436e-83ed-d32ede32efd6</TargetNodeId>
       <TargetPinName>Content</TargetPinName>
     </ConnectorData>
   </Connectors>
-  <ViewData />
+  <ViewData>
+    <NodeViewData>
+      <NodeId>faf47142-a7d1-462c-9aea-a481f436c0f9</NodeId>
+      <X>40</X>
+      <Y>80</Y>
+      <Width>200</Width>
+      <Height>100</Height>
+    </NodeViewData>
+    <NodeViewData>
+      <NodeId>8b20f393-0c54-4717-b650-8395a6b8ee54</NodeId>
+      <X>280</X>
+      <Y>80</Y>
+      <Width>200</Width>
+      <Height>100</Height>
+    </NodeViewData>
+    <NodeViewData>
+      <NodeId>1f17e69a-6ab9-436e-83ed-d32ede32efd6</NodeId>
+      <X>520</X>
+      <Y>80</Y>
+      <Width>200</Width>
+      <Height>100</Height>
+    </NodeViewData>
+  </ViewData>
   <DataObjects />
 </NodeGraphData>

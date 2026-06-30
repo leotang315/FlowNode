@@ -38,5 +38,8 @@ jobs:
       - name: Run score-check business sample
         run: .\FlowNode.Cli\bin\Release\net472\FlowNode.Cli.exe --var threshold=60 samples\score-check.xml
 
+      - name: Run config-score-check JSON sample
+        run: .\FlowNode.Cli\bin\Release\net472\FlowNode.Cli.exe samples\config-score-check.xml
+
       - name: Run HostDemo embed sample
         run: .\FlowNode.HostDemo\bin\Release\net472\FlowNode.HostDemo.exe

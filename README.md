@@ -42,7 +42,7 @@ msbuild FlowNode.sln /p:Configuration=Release
 powershell -ExecutionPolicy Bypass -File scripts/run-tests.ps1
 ```
 
-当前 **137** 个 Core 用例 + **16** 个 Editor 用例（合计 **153**）。
+当前 **147** 个 Core 用例 + **16** 个 Editor 用例（合计 **163**）。
 
 ## 命令行执行（无 UI）
 
@@ -124,7 +124,7 @@ FlowNode/
 ├── FlowNode/             # WinForms 可视化编辑器（画布、命令、属性面板）
 ├── FlowNode.Cli/         # 命令行：加载 XML → 校验 → 执行（无 UI）
 ├── FlowNode.HostDemo/    # 嵌入示例：GraphHost + 自定义 [Function] 节点
-├── FlowNode.Tests/       # Core 单元测试（137 用例，仅引 Core）
+├── FlowNode.Tests/       # Core 单元测试（147 用例，仅引 Core）
 ├── FlowNode.Tests.Editor/ # 编辑器 UI 测试（16 用例，引 WinExe）
 ├── FlowNode.sln
 ├── scripts/run-tests.ps1

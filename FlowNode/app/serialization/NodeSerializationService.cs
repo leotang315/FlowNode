@@ -21,6 +21,9 @@ namespace FlowNode.app.serialization
             this.nodeViews = nodeViews;
         }
 
+        /// <summary>最近一次加载是否使用了自动网格排布（无 ViewData 或部分缺失）。</summary>
+        public bool LastLoadUsedAutoLayout { get; private set; }
+
         public void SaveToFile(string filePath)
         {
             graphSerializer.SaveToFile(filePath, CaptureViewData);
@@ -58,6 +61,7 @@ namespace FlowNode.app.serialization
         private void LoadGraph(NodeGraphData graphData)
         {
             nodeViews.Clear();
+            LastLoadUsedAutoLayout = false;
             var nodeMap = graphSerializer.DeserializeGraph(graphData);
 
             var positionedNodeIds = new HashSet<string>(StringComparer.Ordinal);
@@ -95,6 +99,7 @@ namespace FlowNode.app.serialization
 
                 var nodeView = NodeViewFactory.CreateNodeView((NodeBase)pair.Value, location);
                 nodeViews.Add(pair.Value, nodeView);
+                LastLoadUsedAutoLayout = true;
             }
         }
     }

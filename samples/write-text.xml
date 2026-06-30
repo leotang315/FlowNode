@@ -2,7 +2,7 @@
 <NodeGraphData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <Nodes>
     <NodeData>
-      <Id>2608adfb-446b-431d-979d-af0c67f17645</Id>
+      <Id>db7d4df9-f4f0-477b-8781-9daf2be8d833</Id>
       <Type>FlowNode.node.WriteTextNode</Type>
       <Name>Write Text</Name>
       <IsAutoRun>false</IsAutoRun>
@@ -45,6 +45,14 @@
     </NodeData>
   </Nodes>
   <Connectors />
-  <ViewData />
+  <ViewData>
+    <NodeViewData>
+      <NodeId>db7d4df9-f4f0-477b-8781-9daf2be8d833</NodeId>
+      <X>40</X>
+      <Y>80</Y>
+      <Width>200</Width>
+      <Height>100</Height>
+    </NodeViewData>
+  </ViewData>
   <DataObjects />
 </NodeGraphData>

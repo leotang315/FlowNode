@@ -2,7 +2,75 @@
 <NodeGraphData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <Nodes>
     <NodeData>
-      <Id>28e96a71-4657-4466-ab61-bf37e4888e7e</Id>
+      <Id>7c19306d-e212-4d44-8658-c6e30e3a7dd6</Id>
+      <Type>FlowNode.node.FunctionNode</Type>
+      <Name>readTextFile</Name>
+      <IsAutoRun>true</IsAutoRun>
+      <NodePath>/custom/Io\readTextFile</NodePath>
+      <VarIsSet>false</VarIsSet>
+      <Properties>
+        <PropertyData>
+          <Key>method</Key>
+          <Value>Void ReadTextFile(System.String, System.String ByRef)</Value>
+          <TypeName>System.Reflection.RuntimeMethodInfo</TypeName>
+        </PropertyData>
+      </Properties>
+      <Pins>
+        <PinData>
+          <Name>path</Name>
+          <Direction>Input</Direction>
+          <PinType>Data</PinType>
+          <DataType>System.String</DataType>
+          <DefaultValue>samples/config.json</DefaultValue>
+          <ValueTypeName>System.String</ValueTypeName>
+        </PinData>
+        <PinData>
+          <Name>result</Name>
+          <Direction>Output</Direction>
+          <PinType>Data</PinType>
+          <DataType>System.String&amp;</DataType>
+        </PinData>
+      </Pins>
+    </NodeData>
+    <NodeData>
+      <Id>98820db6-9b1e-427a-b483-83311e81d0dc</Id>
+      <Type>FlowNode.node.FunctionNode</Type>
+      <Name>getJsonInt</Name>
+      <IsAutoRun>true</IsAutoRun>
+      <NodePath>/custom/Json\getJsonInt</NodePath>
+      <VarIsSet>false</VarIsSet>
+      <Properties>
+        <PropertyData>
+          <Key>method</Key>
+          <Value>Void GetJsonInt(System.String, System.String, Int32 ByRef)</Value>
+          <TypeName>System.Reflection.RuntimeMethodInfo</TypeName>
+        </PropertyData>
+      </Properties>
+      <Pins>
+        <PinData>
+          <Name>json</Name>
+          <Direction>Input</Direction>
+          <PinType>Data</PinType>
+          <DataType>System.String</DataType>
+        </PinData>
+        <PinData>
+          <Name>key</Name>
+          <Direction>Input</Direction>
+          <PinType>Data</PinType>
+          <DataType>System.String</DataType>
+          <DefaultValue>threshold</DefaultValue>
+          <ValueTypeName>System.String</ValueTypeName>
+        </PinData>
+        <PinData>
+          <Name>result</Name>
+          <Direction>Output</Direction>
+          <PinType>Data</PinType>
+          <DataType>System.Int32&amp;</DataType>
+        </PinData>
+      </Pins>
+    </NodeData>
+    <NodeData>
+      <Id>e085003d-173b-4e5a-a1ba-69630eef38c2</Id>
       <Type>FlowNode.node.FunctionNode</Type>
       <Name>readTextFile</Name>
       <IsAutoRun>true</IsAutoRun>
@@ -33,7 +101,7 @@
       </Pins>
     </NodeData>
     <NodeData>
-      <Id>1b0b0ae7-dd79-4bc2-bdf0-b135b58fef86</Id>
+      <Id>da1f3adf-60af-4e5c-8df9-045c623a1a18</Id>
       <Type>FlowNode.node.FunctionNode</Type>
       <Name>stringToInt</Name>
       <IsAutoRun>true</IsAutoRun>
@@ -62,36 +130,7 @@
       </Pins>
     </NodeData>
     <NodeData>
-      <Id>9861d856-2f31-4b12-a431-931e39e79a62</Id>
-      <Type>FlowNode.node.GetObjectNode</Type>
-      <Name>Get threshold</Name>
-      <IsAutoRun>true</IsAutoRun>
-      <VarName>threshold</VarName>
-      <VarTypeName>System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</VarTypeName>
-      <VarIsSet>false</VarIsSet>
-      <Properties>
-        <PropertyData>
-          <Key>VariableName</Key>
-          <Value>threshold</Value>
-          <TypeName>System.String</TypeName>
-        </PropertyData>
-        <PropertyData>
-          <Key>VariableType</Key>
-          <Value>System.Int32</Value>
-          <TypeName>System.RuntimeType</TypeName>
-        </PropertyData>
-      </Properties>
-      <Pins>
-        <PinData>
-          <Name>threshold</Name>
-          <Direction>Output</Direction>
-          <PinType>Data</PinType>
-          <DataType>System.Int32</DataType>
-        </PinData>
-      </Pins>
-    </NodeData>
-    <NodeData>
-      <Id>08614457-8409-47e5-8edf-33c7caf80c0d</Id>
+      <Id>35195b03-0e66-46a7-84ea-feb12b103bf8</Id>
       <Type>FlowNode.node.FunctionNode</Type>
       <Name>greaterOrEqual</Name>
       <IsAutoRun>true</IsAutoRun>
@@ -126,7 +165,7 @@
       </Pins>
     </NodeData>
     <NodeData>
-      <Id>5d233c12-b55d-4c18-b538-6c97a8d7674c</Id>
+      <Id>e3040b78-f73d-4126-9072-b4d908d384c2</Id>
       <Type>FlowNode.BranchNode</Type>
       <Name>Branch</Name>
       <IsAutoRun>false</IsAutoRun>
@@ -160,7 +199,7 @@
       </Pins>
     </NodeData>
     <NodeData>
-      <Id>5cb57d90-8d19-4d4d-9e31-94ac848d9993</Id>
+      <Id>f266ebd0-19f9-4697-bb56-aa48192baa33</Id>
       <Type>FlowNode.node.WriteTextNode</Type>
       <Name>WriteText</Name>
       <IsAutoRun>false</IsAutoRun>
@@ -189,7 +228,7 @@
           <Direction>Input</Direction>
           <PinType>Data</PinType>
           <DataType>System.String</DataType>
-          <DefaultValue>samples/score-result.txt</DefaultValue>
+          <DefaultValue>samples/config-score-result.txt</DefaultValue>
           <ValueTypeName>System.String</ValueTypeName>
         </PinData>
         <PinData>
@@ -197,13 +236,13 @@
           <Direction>Input</Direction>
           <PinType>Data</PinType>
           <DataType>System.String</DataType>
-          <DefaultValue>PASS: score meets threshold</DefaultValue>
+          <DefaultValue>PASS: score meets config threshold</DefaultValue>
           <ValueTypeName>System.String</ValueTypeName>
         </PinData>
       </Pins>
     </NodeData>
     <NodeData>
-      <Id>236671b3-2f49-40b7-bde5-237e46a088b1</Id>
+      <Id>3bc3b2ab-ed09-47c5-ae32-c9989a2f9408</Id>
       <Type>FlowNode.node.WriteTextNode</Type>
       <Name>WriteText</Name>
       <IsAutoRun>false</IsAutoRun>
@@ -232,7 +271,7 @@
           <Direction>Input</Direction>
           <PinType>Data</PinType>
           <DataType>System.String</DataType>
-          <DefaultValue>samples/score-result.txt</DefaultValue>
+          <DefaultValue>samples/config-score-result.txt</DefaultValue>
           <ValueTypeName>System.String</ValueTypeName>
         </PinData>
         <PinData>
@@ -240,7 +279,7 @@
           <Direction>Input</Direction>
           <PinType>Data</PinType>
           <DataType>System.String</DataType>
-          <DefaultValue>FAIL: score below threshold</DefaultValue>
+          <DefaultValue>FAIL: score below config threshold</DefaultValue>
           <ValueTypeName>System.String</ValueTypeName>
         </PinData>
       </Pins>
@@ -248,99 +287,105 @@
   </Nodes>
   <Connectors>
     <ConnectorData>
-      <SourceNodeId>28e96a71-4657-4466-ab61-bf37e4888e7e</SourceNodeId>
+      <SourceNodeId>7c19306d-e212-4d44-8658-c6e30e3a7dd6</SourceNodeId>
       <SourcePinName>result</SourcePinName>
-      <TargetNodeId>1b0b0ae7-dd79-4bc2-bdf0-b135b58fef86</TargetNodeId>
-      <TargetPinName>value</TargetPinName>
+      <TargetNodeId>98820db6-9b1e-427a-b483-83311e81d0dc</TargetNodeId>
+      <TargetPinName>json</TargetPinName>
     </ConnectorData>
     <ConnectorData>
-      <SourceNodeId>1b0b0ae7-dd79-4bc2-bdf0-b135b58fef86</SourceNodeId>
+      <SourceNodeId>98820db6-9b1e-427a-b483-83311e81d0dc</SourceNodeId>
       <SourcePinName>result</SourcePinName>
-      <TargetNodeId>08614457-8409-47e5-8edf-33c7caf80c0d</TargetNodeId>
-      <TargetPinName>a</TargetPinName>
-    </ConnectorData>
-    <ConnectorData>
-      <SourceNodeId>9861d856-2f31-4b12-a431-931e39e79a62</SourceNodeId>
-      <SourcePinName>threshold</SourcePinName>
-      <TargetNodeId>08614457-8409-47e5-8edf-33c7caf80c0d</TargetNodeId>
+      <TargetNodeId>35195b03-0e66-46a7-84ea-feb12b103bf8</TargetNodeId>
       <TargetPinName>b</TargetPinName>
     </ConnectorData>
     <ConnectorData>
-      <SourceNodeId>08614457-8409-47e5-8edf-33c7caf80c0d</SourceNodeId>
+      <SourceNodeId>e085003d-173b-4e5a-a1ba-69630eef38c2</SourceNodeId>
       <SourcePinName>result</SourcePinName>
-      <TargetNodeId>5d233c12-b55d-4c18-b538-6c97a8d7674c</TargetNodeId>
+      <TargetNodeId>da1f3adf-60af-4e5c-8df9-045c623a1a18</TargetNodeId>
+      <TargetPinName>value</TargetPinName>
+    </ConnectorData>
+    <ConnectorData>
+      <SourceNodeId>da1f3adf-60af-4e5c-8df9-045c623a1a18</SourceNodeId>
+      <SourcePinName>result</SourcePinName>
+      <TargetNodeId>35195b03-0e66-46a7-84ea-feb12b103bf8</TargetNodeId>
+      <TargetPinName>a</TargetPinName>
+    </ConnectorData>
+    <ConnectorData>
+      <SourceNodeId>35195b03-0e66-46a7-84ea-feb12b103bf8</SourceNodeId>
+      <SourcePinName>result</SourcePinName>
+      <TargetNodeId>e3040b78-f73d-4126-9072-b4d908d384c2</TargetNodeId>
       <TargetPinName>Condition</TargetPinName>
     </ConnectorData>
     <ConnectorData>
-      <SourceNodeId>5d233c12-b55d-4c18-b538-6c97a8d7674c</SourceNodeId>
+      <SourceNodeId>e3040b78-f73d-4126-9072-b4d908d384c2</SourceNodeId>
       <SourcePinName>True</SourcePinName>
-      <TargetNodeId>5cb57d90-8d19-4d4d-9e31-94ac848d9993</TargetNodeId>
+      <TargetNodeId>f266ebd0-19f9-4697-bb56-aa48192baa33</TargetNodeId>
       <TargetPinName>Input</TargetPinName>
     </ConnectorData>
     <ConnectorData>
-      <SourceNodeId>5d233c12-b55d-4c18-b538-6c97a8d7674c</SourceNodeId>
+      <SourceNodeId>e3040b78-f73d-4126-9072-b4d908d384c2</SourceNodeId>
       <SourcePinName>False</SourcePinName>
-      <TargetNodeId>236671b3-2f49-40b7-bde5-237e46a088b1</TargetNodeId>
+      <TargetNodeId>3bc3b2ab-ed09-47c5-ae32-c9989a2f9408</TargetNodeId>
       <TargetPinName>Input</TargetPinName>
     </ConnectorData>
   </Connectors>
   <ViewData>
     <NodeViewData>
-      <NodeId>28e96a71-4657-4466-ab61-bf37e4888e7e</NodeId>
+      <NodeId>7c19306d-e212-4d44-8658-c6e30e3a7dd6</NodeId>
       <X>40</X>
       <Y>80</Y>
       <Width>200</Width>
       <Height>100</Height>
     </NodeViewData>
     <NodeViewData>
-      <NodeId>1b0b0ae7-dd79-4bc2-bdf0-b135b58fef86</NodeId>
+      <NodeId>98820db6-9b1e-427a-b483-83311e81d0dc</NodeId>
       <X>280</X>
       <Y>80</Y>
       <Width>200</Width>
       <Height>100</Height>
     </NodeViewData>
     <NodeViewData>
-      <NodeId>9861d856-2f31-4b12-a431-931e39e79a62</NodeId>
+      <NodeId>e085003d-173b-4e5a-a1ba-69630eef38c2</NodeId>
       <X>520</X>
       <Y>80</Y>
       <Width>200</Width>
       <Height>100</Height>
     </NodeViewData>
     <NodeViewData>
-      <NodeId>08614457-8409-47e5-8edf-33c7caf80c0d</NodeId>
+      <NodeId>da1f3adf-60af-4e5c-8df9-045c623a1a18</NodeId>
       <X>760</X>
       <Y>80</Y>
       <Width>200</Width>
       <Height>100</Height>
     </NodeViewData>
     <NodeViewData>
-      <NodeId>5d233c12-b55d-4c18-b538-6c97a8d7674c</NodeId>
+      <NodeId>35195b03-0e66-46a7-84ea-feb12b103bf8</NodeId>
       <X>1000</X>
       <Y>80</Y>
       <Width>200</Width>
       <Height>100</Height>
     </NodeViewData>
     <NodeViewData>
-      <NodeId>5cb57d90-8d19-4d4d-9e31-94ac848d9993</NodeId>
+      <NodeId>e3040b78-f73d-4126-9072-b4d908d384c2</NodeId>
       <X>1240</X>
       <Y>80</Y>
       <Width>200</Width>
       <Height>100</Height>
     </NodeViewData>
     <NodeViewData>
-      <NodeId>236671b3-2f49-40b7-bde5-237e46a088b1</NodeId>
+      <NodeId>f266ebd0-19f9-4697-bb56-aa48192baa33</NodeId>
       <X>1480</X>
       <Y>80</Y>
       <Width>200</Width>
       <Height>100</Height>
     </NodeViewData>
+    <NodeViewData>
+      <NodeId>3bc3b2ab-ed09-47c5-ae32-c9989a2f9408</NodeId>
+      <X>1720</X>
+      <Y>80</Y>
+      <Width>200</Width>
+      <Height>100</Height>
+    </NodeViewData>
   </ViewData>
-  <DataObjects>
-    <DataObjectData>
-      <Key>threshold</Key>
-      <TypeName>System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</TypeName>
-      <Value>60</Value>
-      <ValueTypeName>System.Int32</ValueTypeName>
-    </DataObjectData>
-  </DataObjects>
+  <DataObjects />
 </NodeGraphData>

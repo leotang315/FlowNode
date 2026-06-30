@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Net.Http;
+using System.Text;
 using FlowNode.node.Attribute;
 
 namespace FlowNode.node
@@ -32,6 +33,25 @@ namespace FlowNode.node
             try
             {
                 result = Client.GetStringAsync(url).GetAwaiter().GetResult() ?? string.Empty;
+            }
+            catch
+            {
+                result = string.Empty;
+            }
+        }
+
+        [Function("httpPost", true)]
+        public static void HttpPost(string url, string body, out string result)
+        {
+            result = string.Empty;
+            if (string.IsNullOrWhiteSpace(url))
+                return;
+
+            try
+            {
+                var content = new StringContent(body ?? string.Empty, Encoding.UTF8, "application/json");
+                var response = Client.PostAsync(url, content).GetAwaiter().GetResult();
+                result = response.Content.ReadAsStringAsync().GetAwaiter().GetResult() ?? string.Empty;
             }
             catch
             {

@@ -12,13 +12,16 @@
 | `write-text.xml` | WriteText 节点，执行后写入 `output.txt`（相对当前工作目录） |
 | `read-transform-write.xml` | 读 `input.txt` → 拼接后缀 → 写 `processed-output.txt` |
 | `score-check.xml` | **业务示例**：读 `score-input.txt` → 与 **全局变量 `threshold`** 比较 → Branch → 写 `score-result.txt` |
-| `score-input.txt` | 供 `score-check.xml` 使用的分数（默认 `85`） |
+| `config-score-check.xml` | **JSON 配置示例**：读 `config.json` 取 threshold + 读分数 → Branch → 写 `config-score-result.txt` |
+| `config.json` | `{"threshold": 60, "mode": "strict"}`，供 `config-score-check.xml` |
+| `score-input.txt` | 供 score 类示例使用的分数（默认 `85`） |
 | `input.txt` | 供 `read-transform-write.xml` 使用的输入文本 |
 
 CLI 跑分数检查（需在仓库根目录，或通过 `GraphRunOptions.WorkingDirectory`）：
 
 ```powershell
 .\FlowNode.Cli\bin\Debug\net472\FlowNode.Cli.exe --var threshold=60 samples\score-check.xml
+.\FlowNode.Cli\bin\Debug\net472\FlowNode.Cli.exe samples\config-score-check.xml
 .\FlowNode.HostDemo\bin\Debug\net472\FlowNode.HostDemo.exe --threshold 90
 ```
 
