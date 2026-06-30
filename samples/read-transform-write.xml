@@ -2,7 +2,7 @@
 <NodeGraphData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <Nodes>
     <NodeData>
-      <Id>faf47142-a7d1-462c-9aea-a481f436c0f9</Id>
+      <Id>85cef9e4-be26-4c0e-9694-fa6a724f8f3e</Id>
       <Type>FlowNode.node.FunctionNode</Type>
       <Name>readTextFile</Name>
       <IsAutoRun>true</IsAutoRun>
@@ -33,7 +33,7 @@
       </Pins>
     </NodeData>
     <NodeData>
-      <Id>8b20f393-0c54-4717-b650-8395a6b8ee54</Id>
+      <Id>601dbb99-27eb-458c-9111-dd12aea2b3e1</Id>
       <Type>FlowNode.node.FunctionNode</Type>
       <Name>concat</Name>
       <IsAutoRun>true</IsAutoRun>
@@ -70,7 +70,7 @@
       </Pins>
     </NodeData>
     <NodeData>
-      <Id>1f17e69a-6ab9-436e-83ed-d32ede32efd6</Id>
+      <Id>aa1b8f75-f66e-4ffc-8155-3a0301b01184</Id>
       <Type>FlowNode.node.WriteTextNode</Type>
       <Name>Write Text</Name>
       <IsAutoRun>false</IsAutoRun>
@@ -114,35 +114,35 @@
   </Nodes>
   <Connectors>
     <ConnectorData>
-      <SourceNodeId>faf47142-a7d1-462c-9aea-a481f436c0f9</SourceNodeId>
+      <SourceNodeId>85cef9e4-be26-4c0e-9694-fa6a724f8f3e</SourceNodeId>
       <SourcePinName>result</SourcePinName>
-      <TargetNodeId>8b20f393-0c54-4717-b650-8395a6b8ee54</TargetNodeId>
+      <TargetNodeId>601dbb99-27eb-458c-9111-dd12aea2b3e1</TargetNodeId>
       <TargetPinName>a</TargetPinName>
     </ConnectorData>
     <ConnectorData>
-      <SourceNodeId>8b20f393-0c54-4717-b650-8395a6b8ee54</SourceNodeId>
+      <SourceNodeId>601dbb99-27eb-458c-9111-dd12aea2b3e1</SourceNodeId>
       <SourcePinName>result</SourcePinName>
-      <TargetNodeId>1f17e69a-6ab9-436e-83ed-d32ede32efd6</TargetNodeId>
+      <TargetNodeId>aa1b8f75-f66e-4ffc-8155-3a0301b01184</TargetNodeId>
       <TargetPinName>Content</TargetPinName>
     </ConnectorData>
   </Connectors>
   <ViewData>
     <NodeViewData>
-      <NodeId>faf47142-a7d1-462c-9aea-a481f436c0f9</NodeId>
+      <NodeId>85cef9e4-be26-4c0e-9694-fa6a724f8f3e</NodeId>
       <X>40</X>
       <Y>80</Y>
       <Width>200</Width>
       <Height>100</Height>
     </NodeViewData>
     <NodeViewData>
-      <NodeId>8b20f393-0c54-4717-b650-8395a6b8ee54</NodeId>
+      <NodeId>601dbb99-27eb-458c-9111-dd12aea2b3e1</NodeId>
       <X>280</X>
       <Y>80</Y>
       <Width>200</Width>
       <Height>100</Height>
     </NodeViewData>
     <NodeViewData>
-      <NodeId>1f17e69a-6ab9-436e-83ed-d32ede32efd6</NodeId>
+      <NodeId>aa1b8f75-f66e-4ffc-8155-3a0301b01184</NodeId>
       <X>520</X>
       <Y>80</Y>
       <Width>200</Width>

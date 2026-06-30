@@ -41,5 +41,8 @@ jobs:
       - name: Run config-score-check JSON sample
         run: .\FlowNode.Cli\bin\Release\net472\FlowNode.Cli.exe samples\config-score-check.xml
 
+      - name: Run webhook-post sample
+        run: .\FlowNode.Cli\bin\Release\net472\FlowNode.Cli.exe samples\webhook-post.xml
+
       - name: Run HostDemo embed sample
         run: .\FlowNode.HostDemo\bin\Release\net472\FlowNode.HostDemo.exe

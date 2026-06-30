@@ -2,7 +2,7 @@
 <NodeGraphData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <Nodes>
     <NodeData>
-      <Id>28e96a71-4657-4466-ab61-bf37e4888e7e</Id>
+      <Id>ca0a791f-02be-4be6-a363-c15f87e4e3f6</Id>
       <Type>FlowNode.node.FunctionNode</Type>
       <Name>readTextFile</Name>
       <IsAutoRun>true</IsAutoRun>
@@ -33,7 +33,7 @@
       </Pins>
     </NodeData>
     <NodeData>
-      <Id>1b0b0ae7-dd79-4bc2-bdf0-b135b58fef86</Id>
+      <Id>e0cdf928-8004-44b6-8e57-7bdd51da3c74</Id>
       <Type>FlowNode.node.FunctionNode</Type>
       <Name>stringToInt</Name>
       <IsAutoRun>true</IsAutoRun>
@@ -62,7 +62,7 @@
       </Pins>
     </NodeData>
     <NodeData>
-      <Id>9861d856-2f31-4b12-a431-931e39e79a62</Id>
+      <Id>5fdbab28-91f5-40ab-8eba-1fec66562512</Id>
       <Type>FlowNode.node.GetObjectNode</Type>
       <Name>Get threshold</Name>
       <IsAutoRun>true</IsAutoRun>
@@ -91,7 +91,7 @@
       </Pins>
     </NodeData>
     <NodeData>
-      <Id>08614457-8409-47e5-8edf-33c7caf80c0d</Id>
+      <Id>20826679-0b1a-4bab-9d67-2c73ce8e5258</Id>
       <Type>FlowNode.node.FunctionNode</Type>
       <Name>greaterOrEqual</Name>
       <IsAutoRun>true</IsAutoRun>
@@ -126,7 +126,7 @@
       </Pins>
     </NodeData>
     <NodeData>
-      <Id>5d233c12-b55d-4c18-b538-6c97a8d7674c</Id>
+      <Id>635acbac-7085-4b48-a095-c82a786c08e0</Id>
       <Type>FlowNode.BranchNode</Type>
       <Name>Branch</Name>
       <IsAutoRun>false</IsAutoRun>
@@ -160,7 +160,7 @@
       </Pins>
     </NodeData>
     <NodeData>
-      <Id>5cb57d90-8d19-4d4d-9e31-94ac848d9993</Id>
+      <Id>49fbfd36-696d-47eb-920d-2b272a9e0e5d</Id>
       <Type>FlowNode.node.WriteTextNode</Type>
       <Name>WriteText</Name>
       <IsAutoRun>false</IsAutoRun>
@@ -203,7 +203,7 @@
       </Pins>
     </NodeData>
     <NodeData>
-      <Id>236671b3-2f49-40b7-bde5-237e46a088b1</Id>
+      <Id>8bdcace0-4cf0-4b0e-a6f0-81602b7300c5</Id>
       <Type>FlowNode.node.WriteTextNode</Type>
       <Name>WriteText</Name>
       <IsAutoRun>false</IsAutoRun>
@@ -248,87 +248,87 @@
   </Nodes>
   <Connectors>
     <ConnectorData>
-      <SourceNodeId>28e96a71-4657-4466-ab61-bf37e4888e7e</SourceNodeId>
+      <SourceNodeId>ca0a791f-02be-4be6-a363-c15f87e4e3f6</SourceNodeId>
       <SourcePinName>result</SourcePinName>
-      <TargetNodeId>1b0b0ae7-dd79-4bc2-bdf0-b135b58fef86</TargetNodeId>
+      <TargetNodeId>e0cdf928-8004-44b6-8e57-7bdd51da3c74</TargetNodeId>
       <TargetPinName>value</TargetPinName>
     </ConnectorData>
     <ConnectorData>
-      <SourceNodeId>1b0b0ae7-dd79-4bc2-bdf0-b135b58fef86</SourceNodeId>
+      <SourceNodeId>e0cdf928-8004-44b6-8e57-7bdd51da3c74</SourceNodeId>
       <SourcePinName>result</SourcePinName>
-      <TargetNodeId>08614457-8409-47e5-8edf-33c7caf80c0d</TargetNodeId>
+      <TargetNodeId>20826679-0b1a-4bab-9d67-2c73ce8e5258</TargetNodeId>
       <TargetPinName>a</TargetPinName>
     </ConnectorData>
     <ConnectorData>
-      <SourceNodeId>9861d856-2f31-4b12-a431-931e39e79a62</SourceNodeId>
+      <SourceNodeId>5fdbab28-91f5-40ab-8eba-1fec66562512</SourceNodeId>
       <SourcePinName>threshold</SourcePinName>
-      <TargetNodeId>08614457-8409-47e5-8edf-33c7caf80c0d</TargetNodeId>
+      <TargetNodeId>20826679-0b1a-4bab-9d67-2c73ce8e5258</TargetNodeId>
       <TargetPinName>b</TargetPinName>
     </ConnectorData>
     <ConnectorData>
-      <SourceNodeId>08614457-8409-47e5-8edf-33c7caf80c0d</SourceNodeId>
+      <SourceNodeId>20826679-0b1a-4bab-9d67-2c73ce8e5258</SourceNodeId>
       <SourcePinName>result</SourcePinName>
-      <TargetNodeId>5d233c12-b55d-4c18-b538-6c97a8d7674c</TargetNodeId>
+      <TargetNodeId>635acbac-7085-4b48-a095-c82a786c08e0</TargetNodeId>
       <TargetPinName>Condition</TargetPinName>
     </ConnectorData>
     <ConnectorData>
-      <SourceNodeId>5d233c12-b55d-4c18-b538-6c97a8d7674c</SourceNodeId>
+      <SourceNodeId>635acbac-7085-4b48-a095-c82a786c08e0</SourceNodeId>
       <SourcePinName>True</SourcePinName>
-      <TargetNodeId>5cb57d90-8d19-4d4d-9e31-94ac848d9993</TargetNodeId>
+      <TargetNodeId>49fbfd36-696d-47eb-920d-2b272a9e0e5d</TargetNodeId>
       <TargetPinName>Input</TargetPinName>
     </ConnectorData>
     <ConnectorData>
-      <SourceNodeId>5d233c12-b55d-4c18-b538-6c97a8d7674c</SourceNodeId>
+      <SourceNodeId>635acbac-7085-4b48-a095-c82a786c08e0</SourceNodeId>
       <SourcePinName>False</SourcePinName>
-      <TargetNodeId>236671b3-2f49-40b7-bde5-237e46a088b1</TargetNodeId>
+      <TargetNodeId>8bdcace0-4cf0-4b0e-a6f0-81602b7300c5</TargetNodeId>
       <TargetPinName>Input</TargetPinName>
     </ConnectorData>
   </Connectors>
   <ViewData>
     <NodeViewData>
-      <NodeId>28e96a71-4657-4466-ab61-bf37e4888e7e</NodeId>
+      <NodeId>ca0a791f-02be-4be6-a363-c15f87e4e3f6</NodeId>
       <X>40</X>
       <Y>80</Y>
       <Width>200</Width>
       <Height>100</Height>
     </NodeViewData>
     <NodeViewData>
-      <NodeId>1b0b0ae7-dd79-4bc2-bdf0-b135b58fef86</NodeId>
+      <NodeId>e0cdf928-8004-44b6-8e57-7bdd51da3c74</NodeId>
       <X>280</X>
       <Y>80</Y>
       <Width>200</Width>
       <Height>100</Height>
     </NodeViewData>
     <NodeViewData>
-      <NodeId>9861d856-2f31-4b12-a431-931e39e79a62</NodeId>
+      <NodeId>5fdbab28-91f5-40ab-8eba-1fec66562512</NodeId>
       <X>520</X>
       <Y>80</Y>
       <Width>200</Width>
       <Height>100</Height>
     </NodeViewData>
     <NodeViewData>
-      <NodeId>08614457-8409-47e5-8edf-33c7caf80c0d</NodeId>
+      <NodeId>20826679-0b1a-4bab-9d67-2c73ce8e5258</NodeId>
       <X>760</X>
       <Y>80</Y>
       <Width>200</Width>
       <Height>100</Height>
     </NodeViewData>
     <NodeViewData>
-      <NodeId>5d233c12-b55d-4c18-b538-6c97a8d7674c</NodeId>
+      <NodeId>635acbac-7085-4b48-a095-c82a786c08e0</NodeId>
       <X>1000</X>
       <Y>80</Y>
       <Width>200</Width>
       <Height>100</Height>
     </NodeViewData>
     <NodeViewData>
-      <NodeId>5cb57d90-8d19-4d4d-9e31-94ac848d9993</NodeId>
+      <NodeId>49fbfd36-696d-47eb-920d-2b272a9e0e5d</NodeId>
       <X>1240</X>
       <Y>80</Y>
       <Width>200</Width>
       <Height>100</Height>
     </NodeViewData>
     <NodeViewData>
-      <NodeId>236671b3-2f49-40b7-bde5-237e46a088b1</NodeId>
+      <NodeId>8bdcace0-4cf0-4b0e-a6f0-81602b7300c5</NodeId>
       <X>1480</X>
       <Y>80</Y>
       <Width>200</Width>

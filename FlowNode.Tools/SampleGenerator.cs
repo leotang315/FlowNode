@@ -24,6 +24,7 @@ namespace FlowNode.Tools
             SaveReadTransformWrite(Path.Combine(samplesDir, "read-transform-write.xml"));
             SaveScoreCheck(Path.Combine(samplesDir, "score-check.xml"));
             SaveConfigScoreCheck(Path.Combine(samplesDir, "config-score-check.xml"));
+            SaveWebhookPost(Path.Combine(samplesDir, "webhook-post.xml"));
 
             File.WriteAllText(Path.Combine(samplesDir, "score-input.txt"), "85");
             File.WriteAllText(
@@ -218,6 +219,43 @@ namespace FlowNode.Tools
                 branch,
                 writePass,
                 writeFail);
+        }
+
+        /// <summary>
+        /// httpPost 示例：POST JSON → 将响应写入 webhook-response.txt。
+        /// CLI: FlowNode.Cli.exe samples/webhook-post.xml
+        /// 默认 URL 为 https://httpbin.org/post（需网络）；可 --var webhookUrl= --var webhookBody= 覆盖。
+        /// </summary>
+        private static void SaveWebhookPost(string filePath)
+        {
+            var mgr = new NodeManager();
+
+            var getUrl = NodeFactory.CreateVarNode("webhookUrl", typeof(string), isSet: false);
+            var getBody = NodeFactory.CreateVarNode("webhookBody", typeof(string), isSet: false);
+
+            var post = NodeFactory.CreateNode(
+                NodeFactory.GetNodePath().First(p => p.EndsWith("httpPost")));
+
+            var write = (WriteTextNode)NodeFactory.CreateNode(
+                NodeFactory.GetSystemNodePaths().First(p => p.EndsWith("WriteText")));
+            write.findPin("Path").data = "samples/webhook-response.txt";
+
+            mgr.addNode(getUrl);
+            mgr.addNode(getBody);
+            mgr.addNode(post);
+            mgr.addNode(write);
+
+            mgr.addConnector(getUrl.findPin("webhookUrl"), post.findPin("url"));
+            mgr.addConnector(getBody.findPin("webhookBody"), post.findPin("body"));
+            mgr.addConnector(post.findPin("result"), write.findPin("Content"));
+
+            mgr.SetDataObject("webhookUrl", "https://httpbin.org/post", typeof(string));
+            mgr.SetDataObject(
+                "webhookBody",
+                "{\"source\":\"FlowNode\",\"event\":\"webhook-sample\"}",
+                typeof(string));
+
+            SaveGraph(mgr, filePath, getUrl, getBody, post, write);
         }
     }
 }

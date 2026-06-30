@@ -14,6 +14,7 @@
 | `score-check.xml` | **业务示例**：读 `score-input.txt` → 与 **全局变量 `threshold`** 比较 → Branch → 写 `score-result.txt` |
 | `config-score-check.xml` | **JSON 配置示例**：读 `config.json` 取 threshold + 读分数 → Branch → 写 `config-score-result.txt` |
 | `config.json` | `{"threshold": 60, "mode": "strict"}`，供 `config-score-check.xml` |
+| `webhook-post.xml` | **HTTP POST 示例**：`httpPost` → 写 `webhook-response.txt`（默认 POST 到 httpbin.org） |
 | `score-input.txt` | 供 score 类示例使用的分数（默认 `85`） |
 | `input.txt` | 供 `read-transform-write.xml` 使用的输入文本 |
 
@@ -22,7 +23,18 @@ CLI 跑分数检查（需在仓库根目录，或通过 `GraphRunOptions.Working
 ```powershell
 .\FlowNode.Cli\bin\Debug\net472\FlowNode.Cli.exe --var threshold=60 samples\score-check.xml
 .\FlowNode.Cli\bin\Debug\net472\FlowNode.Cli.exe samples\config-score-check.xml
+.\FlowNode.Cli\bin\Debug\net472\FlowNode.Cli.exe samples\webhook-post.xml
 .\FlowNode.HostDemo\bin\Debug\net472\FlowNode.HostDemo.exe --threshold 90
+```
+
+**`webhook-post.xml` 说明**
+
+- 默认 POST `https://httpbin.org/post`，body 为 `{"source":"FlowNode","event":"webhook-sample"}`（全局变量 `webhookUrl` / `webhookBody`，可在编辑器改或用 CLI 覆盖）
+- 响应写入 `samples/webhook-response.txt`（httpbin 会在 JSON 里回显提交的 body）
+- **需要网络**；离线时可 `--var webhookUrl=http://127.0.0.1:9/invalid` 验证流程（响应为空但仍会写文件）
+
+```powershell
+.\FlowNode.Cli\bin\Debug\net472\FlowNode.Cli.exe --var webhookUrl=https://httpbin.org/post samples\webhook-post.xml
 ```
 
 **`threshold` 从哪来？**
