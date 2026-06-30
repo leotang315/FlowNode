@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net472</TargetFramework>
+    <ProjectGuid>{C9E4D3F2-5A6B-7C8D-9E0F-123456789ABC}</ProjectGuid>
+    <AssemblyName>FlowNode.Cli</AssemblyName>
+    <RootNamespace>FlowNode.Cli</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FlowNode.Core\FlowNode.Core.csproj" />
+  </ItemGroup>
+
+</Project>

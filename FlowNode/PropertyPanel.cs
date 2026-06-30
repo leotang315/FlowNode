@@ -100,11 +100,12 @@ namespace FlowNode
 
 
 
-            ICommand command = matched is PinDataPropertyDescriptor
-
-                ? (ICommand)new SetPinDataCommand(currentNode, matched.Name, oldValue, newValue)
-
-                : new SetNodePropertyCommand(currentNode, matched.Name, oldValue, newValue);
+            ICommand command;
+            var pin = currentNode.findPin(matched.Name);
+            if (pin != null && pin.direction == PinDirection.Input && pin.pinType == PinType.Data)
+                command = new SetPinDataCommand(currentNode, matched.Name, oldValue, newValue);
+            else
+                command = new SetNodePropertyCommand(currentNode, matched.Name, oldValue, newValue);
 
 
 

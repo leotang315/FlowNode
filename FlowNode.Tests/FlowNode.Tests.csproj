@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\FlowNode.Core\FlowNode.Core.csproj" />
     <ProjectReference Include="..\FlowNode\FlowNode.csproj" />
   </ItemGroup>
 

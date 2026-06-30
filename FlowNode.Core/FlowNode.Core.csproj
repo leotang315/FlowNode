@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <ProjectGuid>{A8F3C2E1-4B5D-6E7F-9012-3456789ABCDE}</ProjectGuid>
+    <AssemblyName>FlowNode.Core</AssemblyName>
+    <RootNamespace>FlowNode</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\FlowNode\node\**\*.cs" Link="node\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\FlowNode\app\node\*.cs" Link="app\node\%(Filename)%(Extension)" />
+    <Compile Include="..\FlowNode\app\serialization\NodeSerializationData.cs" Link="app\serialization\NodeSerializationData.cs" />
+    <Compile Include="..\FlowNode\app\serialization\NodeSnapshotHelper.cs" Link="app\serialization\NodeSnapshotHelper.cs" />
+    <Compile Include="..\FlowNode\app\serialization\NodeRestoreHelper.cs" Link="app\serialization\NodeRestoreHelper.cs" />
+    <Compile Include="..\FlowNode\app\serialization\NodeGraphSerializer.cs" Link="app\serialization\NodeGraphSerializer.cs" />
+    <Compile Include="..\FlowNode\app\serialization\GraphRunner.cs" Link="app\serialization\GraphRunner.cs" />
+  </ItemGroup>
+
+</Project>

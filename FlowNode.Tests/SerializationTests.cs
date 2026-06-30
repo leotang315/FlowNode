@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using FlowNode.app.serialization;
-using FlowNode.app.view;
 using FlowNode.node;
 using NUnit.Framework;
 
@@ -12,17 +11,16 @@ namespace FlowNode.Tests
     [TestFixture]
     public class SerializationTests
     {
-        private static NodeSerializationService NewService(out NodeManager mgr)
+        private static NodeGraphSerializer NewSerializer(out NodeManager mgr)
         {
             mgr = new NodeManager();
-            var views = new Dictionary<INode, NodeView>();
-            return new NodeSerializationService(mgr, views);
+            return new NodeGraphSerializer(mgr);
         }
 
         [Test]
         public void SaveLoad_RoundTrips_NodesConnectorsAndPinDefaults()
         {
-            var svc = NewService(out var mgr);
+            var svc = NewSerializer(out var mgr);
 
             var addPath = NodeFactory.GetFunctionNodePaths().First(p => p.EndsWith("add"));
             var add = NodeFactory.CreateNode(addPath);
@@ -41,7 +39,7 @@ namespace FlowNode.Tests
             {
                 svc.SaveToFile(temp);
 
-                var svc2 = NewService(out var mgr2);
+                var svc2 = NewSerializer(out var mgr2);
                 svc2.LoadFromFile(temp);
 
                 Assert.AreEqual(2, mgr2.getNodes().Count, "节点数应往返一致");
@@ -60,7 +58,7 @@ namespace FlowNode.Tests
         [Test]
         public void SaveLoad_RoundTrips_ConstantNodeValueAndType()
         {
-            var svc = NewService(out var mgr);
+            var svc = NewSerializer(out var mgr);
 
             var intConstPath = NodeFactory.GetSystemNodePaths().First(p => p.EndsWith("Int"));
             var node = NodeFactory.CreateNode(intConstPath);
@@ -73,7 +71,7 @@ namespace FlowNode.Tests
             {
                 svc.SaveToFile(temp);
 
-                var svc2 = NewService(out var mgr2);
+                var svc2 = NewSerializer(out var mgr2);
                 svc2.LoadFromFile(temp);
 
                 var loaded = mgr2.getNodes().Single();
@@ -89,7 +87,7 @@ namespace FlowNode.Tests
         [Test]
         public void ConvertedPinDefault_PreservesTypeNotJustString()
         {
-            var svc = NewService(out var mgr);
+            var svc = NewSerializer(out var mgr);
 
             var addPath = NodeFactory.GetFunctionNodePaths().First(p => p.EndsWith("add"));
             var add = NodeFactory.CreateNode(addPath);
@@ -102,7 +100,7 @@ namespace FlowNode.Tests
             {
                 svc.SaveToFile(temp);
 
-                var svc2 = NewService(out var mgr2);
+                var svc2 = NewSerializer(out var mgr2);
                 svc2.LoadFromFile(temp);
 
                 var loaded = (NodeBase)mgr2.getNodes().Single();
@@ -122,7 +120,7 @@ namespace FlowNode.Tests
         [Test]
         public void SaveLoad_RoundTrips_VarNodes()
         {
-            var svc = NewService(out var mgr);
+            var svc = NewSerializer(out var mgr);
 
             mgr.SetDataObject("score", 99, typeof(int));
 
@@ -141,7 +139,7 @@ namespace FlowNode.Tests
             {
                 svc.SaveToFile(temp);
 
-                var svc2 = NewService(out var mgr2);
+                var svc2 = NewSerializer(out var mgr2);
                 svc2.LoadFromFile(temp);
 
                 Assert.AreEqual(3, mgr2.getNodes().Count);
@@ -168,7 +166,7 @@ namespace FlowNode.Tests
         [Test]
         public void SaveLoad_RoundTrips_GlobalDataObjectValues()
         {
-            var svc = NewService(out var mgr);
+            var svc = NewSerializer(out var mgr);
 
             mgr.SetDataObject("name", "alice", typeof(string));
             mgr.SetDataObject("ratio", 0.75, typeof(double));
@@ -179,7 +177,7 @@ namespace FlowNode.Tests
             {
                 svc.SaveToFile(temp);
 
-                var svc2 = NewService(out var mgr2);
+                var svc2 = NewSerializer(out var mgr2);
                 svc2.LoadFromFile(temp);
 
                 Assert.AreEqual("alice", mgr2.GetDataObject("name"));
@@ -195,7 +193,7 @@ namespace FlowNode.Tests
         [Test]
         public void SaveLoad_RoundTrips_SwitchCaseCount()
         {
-            var svc = NewService(out var mgr);
+            var svc = NewSerializer(out var mgr);
 
             var switchPath = NodeFactory.GetSystemNodePaths().First(p => p.EndsWith("Switch"));
             var sw = (SwitchNode)NodeFactory.CreateNode(switchPath);
@@ -208,7 +206,7 @@ namespace FlowNode.Tests
             {
                 svc.SaveToFile(temp);
 
-                var svc2 = NewService(out var mgr2);
+                var svc2 = NewSerializer(out var mgr2);
                 svc2.LoadFromFile(temp);
 
                 var loaded = (SwitchNode)mgr2.getNodes().Single();
@@ -225,7 +223,7 @@ namespace FlowNode.Tests
         [Test]
         public void ComputeContentFingerprint_IsStableForSameGraph()
         {
-            var svc = NewService(out var mgr);
+            var svc = NewSerializer(out var mgr);
 
             var addPath = NodeFactory.GetFunctionNodePaths().First(p => p.EndsWith("add"));
             var add = NodeFactory.CreateNode(addPath);
@@ -241,7 +239,7 @@ namespace FlowNode.Tests
         [Test]
         public void ComputeContentFingerprint_ChangesWhenGraphChanges()
         {
-            var svc = NewService(out var mgr);
+            var svc = NewSerializer(out var mgr);
 
             var addPath = NodeFactory.GetFunctionNodePaths().First(p => p.EndsWith("add"));
             var add = NodeFactory.CreateNode(addPath);

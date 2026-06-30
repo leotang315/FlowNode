@@ -21,7 +21,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$testProj = Join-Path $repoRoot "FlowNode.Tests\FlowNode.Tests.csproj"
+$sln = Join-Path $repoRoot "FlowNode.sln"
 
 # Offline restore: use the real user-level global packages folder
 # (some environments redirect NUGET_PACKAGES to a temporary cache).
@@ -42,7 +42,7 @@ function Resolve-MSBuild {
 $msbuild = Resolve-MSBuild
 Write-Host "Using MSBuild: $msbuild"
 
-& $msbuild $testProj /t:Restore,Build /p:Configuration=$Configuration /nologo /v:minimal
+& $msbuild $sln /t:Restore,Build /p:Configuration=$Configuration /nologo /v:minimal
 if ($LASTEXITCODE -ne 0) { throw "Build failed (exit code $LASTEXITCODE)." }
 
 $testExe = Join-Path $repoRoot "FlowNode.Tests\bin\$Configuration\net472\FlowNode.Tests.exe"

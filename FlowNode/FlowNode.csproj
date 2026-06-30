@@ -54,9 +54,6 @@
     <Compile Include="app\command\NodeDataCommands.cs" />
     <Compile Include="app\command\NodePropertyCommands.cs" />
     <Compile Include="app\command\NodeViewCommands.cs" />
-    <Compile Include="app\serialization\NodeSerializationData.cs" />
-    <Compile Include="app\serialization\NodeSnapshotHelper.cs" />
-    <Compile Include="app\serialization\NodeRestoreHelper.cs" />
     <Compile Include="app\serialization\NodeSerializationService.cs" />
     <Compile Include="app\view\control\NodeButton.cs" />
     <Compile Include="app\view\control\NodeCheckBox.cs" />
@@ -99,35 +96,6 @@
     <Compile Include="NodeSearchMenu.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="node\Attribute\NodeAttribute.cs" />
-    <Compile Include="app\node\MathOperator.cs" />
-    <Compile Include="app\node\ComparisonOperator.cs" />
-    <Compile Include="app\node\ConvertOperator.cs" />
-    <Compile Include="app\node\StringOperator.cs" />
-    <Compile Include="app\node\RandomOperator.cs" />
-    <Compile Include="node\Connector.cs" />
-    <Compile Include="node\INode.cs" />
-    <Compile Include="node\INodeManager.cs" />
-    <Compile Include="node\NodeBase.cs" />
-    <Compile Include="node\NodeManager.cs" />
-    <Compile Include="node\NodePropertySheet.cs" />
-    <Compile Include="node\Pin.cs" />
-    <Compile Include="node\PinValueConverter.cs" />
-    <Compile Include="node\SystemNode\FlowControl\BranchNode.cs" />
-    <Compile Include="node\Attribute\FunctionAttribute.cs" />
-    <Compile Include="node\NodeFactory.cs" />
-    <Compile Include="node\SystemNode\FunctionNode.cs" />
-    <Compile Include="node\SystemNode\FlowControl\LoopNode.cs" />
-    <Compile Include="node\SystemNode\FlowControl\SwitchNode.cs" />
-    <Compile Include="node\Attribute\SystemNodeAttribute.cs" />
-    <Compile Include="node\SystemNode\FlowControl\SequenceNode.cs" />
-    <Compile Include="node\SystemNode\GetObjectNode.cs" />
-    <Compile Include="node\SystemNode\SetObjectNode.cs" />
-    <Compile Include="node\SystemNode\PrintNode.cs" />
-    <Compile Include="node\SystemNode\DelayNode.cs" />
-    <Compile Include="node\SystemNode\CommentNode.cs" />
-    <Compile Include="node\SystemNode\ConstantNodes.cs" />
-    <Compile Include="node\TestNode.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PropertyPanel.cs">
@@ -158,6 +126,11 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\FlowNode.Core\FlowNode.Core.csproj">
+      <Project>{A8F3C2E1-4B5D-6E7F-9012-3456789ABCDE}</Project>
+      <Name>FlowNode.Core</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
