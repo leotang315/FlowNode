@@ -10,6 +10,8 @@
 |------|------|
 | `print-hello.xml` | 单个 Print 节点，输出 `hello-sample` 到日志 |
 | `write-text.xml` | WriteText 节点，执行后写入 `output.txt`（相对当前工作目录） |
+| `read-transform-write.xml` | 读 `input.txt` → 拼接后缀 → 写 `processed-output.txt` |
+| `input.txt` | 供 `read-transform-write.xml` 使用的输入文本 |
 
 重新生成示例文件（修改节点默认值后）：
 

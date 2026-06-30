@@ -33,43 +33,54 @@ namespace FlowNode.node
 
         static NodeFactory()
         {
-            // 系统节点，使用反射所有具有SystemNode属性的节点
-            var systemNodeTypes = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(assembly => assembly.GetTypes())
-                .Where(type => type.GetCustomAttributes(typeof(SystemNodeAttribute), false).Any());
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                RegisterAssembly(assembly);
+        }
 
-            foreach (var type in systemNodeTypes)
+        /// <summary>扫描程序集并注册节点；已存在的路径静默跳过（供宿主后加载程序集）。</summary>
+        public static void RegisterAssembly(Assembly assembly)
+        {
+            if (assembly == null)
+                throw new ArgumentNullException(nameof(assembly));
+
+            foreach (var type in GetLoadableTypes(assembly)
+                .Where(t => t.GetCustomAttributes(typeof(SystemNodeAttribute), false).Any()))
             {
                 var systemAttribute = (SystemNodeAttribute)type.GetCustomAttributes(typeof(SystemNodeAttribute), false).First();
-                NodeInfo nodeInfo = new NodeInfo
+                RegisterNodeInfo(new NodeInfo
                 {
                     SystemNodeAttribute = systemAttribute,
                     NodeType = type
-                };
-                RegisterNodeInfo(nodeInfo);
+                }, skipIfExists: true);
             }
 
-            // 函数节点，使用反射找出具有Node的节点类,并在其内部具有Function属性的函数
-            var nodeTypes = AppDomain.CurrentDomain.GetAssemblies()
-                     .SelectMany(assembly => assembly.GetTypes())
-                      .Where(type => type.GetCustomAttributes(typeof(NodeAttribute), false).Any());
-            foreach (var type in nodeTypes)
+            foreach (var type in GetLoadableTypes(assembly)
+                .Where(t => t.GetCustomAttributes(typeof(NodeAttribute), false).Any()))
             {
                 var nodeAttribute = (NodeAttribute)type.GetCustomAttribute(typeof(NodeAttribute), false);
-                var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Static)
-                  .Where(method => method.GetCustomAttributes(typeof(FunctionAttribute), false).Any());
-
-                foreach (var method in methods)
+                foreach (var method in type.GetMethods(BindingFlags.Public | BindingFlags.Static)
+                    .Where(m => m.GetCustomAttributes(typeof(FunctionAttribute), false).Any()))
                 {
                     var functionAttribute = (FunctionAttribute)method.GetCustomAttributes(typeof(FunctionAttribute), false).First();
-                    NodeInfo nodeInfo = new NodeInfo
+                    RegisterNodeInfo(new NodeInfo
                     {
                         NodeAttribute = nodeAttribute,
                         FunctionAttribute = functionAttribute,
                         Method = method
-                    };
-                    RegisterNodeInfo(nodeInfo);
+                    }, skipIfExists: true);
                 }
+            }
+        }
+
+        private static IEnumerable<Type> GetLoadableTypes(Assembly assembly)
+        {
+            try
+            {
+                return assembly.GetTypes();
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                return ex.Types.Where(t => t != null);
             }
         }
 
@@ -149,26 +160,20 @@ namespace FlowNode.node
             return CreateVarNode(varName, varType, isSet);
         }
 
-        public static void RegisterNodeInfo(NodeInfo nodeInfo)
+        public static void RegisterNodeInfo(NodeInfo nodeInfo, bool skipIfExists = false)
         {
             string path;
 
             if (nodeInfo.IsSystemNode)
             {
-                // 系统节点的路径处理
                 if (nodeInfo.SystemNodeAttribute == null)
-                {
                     throw new ArgumentException("System node must have SystemNodeAttribute");
-                }
                 path = Path.Combine(_systemPath, nodeInfo.SystemNodeAttribute.Path);
             }
             else if (nodeInfo.IsFunctionNode)
             {
-                // 函数节点的路径处理
                 if (nodeInfo.NodeAttribute == null || nodeInfo.FunctionAttribute == null)
-                {
                     throw new ArgumentException("Function node must have both NodeAttribute and FunctionAttribute");
-                }
 
                 string functionName = string.IsNullOrEmpty(nodeInfo.FunctionAttribute.Name)
                     ? nodeInfo.Method.Name
@@ -181,13 +186,13 @@ namespace FlowNode.node
                 throw new ArgumentException("Invalid node info type");
             }
 
-            // 检查路径是否已存在
             if (_nodeInfos.ContainsKey(path))
             {
+                if (skipIfExists)
+                    return;
                 throw new ArgumentException($"Node path '{path}' is already registered");
             }
 
-            // 注册节点信息
             _nodeInfos[path] = nodeInfo;
         }
 

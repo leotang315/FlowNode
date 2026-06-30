@@ -20,6 +20,7 @@ namespace FlowNode.Tools
 
             SavePrintHello(Path.Combine(samplesDir, "print-hello.xml"));
             SaveWriteText(Path.Combine(samplesDir, "write-text.xml"));
+            SaveReadTransformWrite(Path.Combine(samplesDir, "read-transform-write.xml"));
 
             return 0;
         }
@@ -42,6 +43,31 @@ namespace FlowNode.Tools
             write.findPin("Path").data = "output.txt";
             write.findPin("Content").data = "written by FlowNode sample graph";
             mgr.addNode(write);
+            new NodeGraphSerializer(mgr).SaveToFile(filePath);
+        }
+
+        private static void SaveReadTransformWrite(string filePath)
+        {
+            var mgr = new NodeManager();
+
+            var read = NodeFactory.CreateNode(
+                NodeFactory.GetNodePath().First(p => p.EndsWith("readTextFile")));
+            read.findPin("path").data = "input.txt";
+
+            var concat = NodeFactory.CreateNode(
+                NodeFactory.GetNodePath().First(p => p.EndsWith("concat")));
+            concat.findPin("b").data = " [processed]";
+
+            var write = new WriteTextNode();
+            write.init();
+            write.findPin("Path").data = "processed-output.txt";
+
+            mgr.addNode(read);
+            mgr.addNode(concat);
+            mgr.addNode(write);
+            mgr.addConnector(read.findPin("result"), concat.findPin("a"));
+            mgr.addConnector(concat.findPin("result"), write.findPin("Content"));
+
             new NodeGraphSerializer(mgr).SaveToFile(filePath);
         }
     }

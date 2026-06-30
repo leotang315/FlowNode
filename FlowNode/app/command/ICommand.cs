@@ -1,8 +1,3 @@
-using FlowNode;
-using FlowNode.node;
-using System.Collections.Generic;
-using System.Drawing;
-
 namespace FlowNode.app.command
 {
     public interface ICommand
@@ -16,7 +11,8 @@ namespace FlowNode.app.command
     /// </summary>
     public class CompositeCommand : ICommand
     {
-        private readonly List<ICommand> commands = new List<ICommand>();
+        private readonly System.Collections.Generic.List<ICommand> commands =
+            new System.Collections.Generic.List<ICommand>();
 
         public bool HasCommands => commands.Count > 0;
 
@@ -33,19 +29,13 @@ namespace FlowNode.app.command
         public void Execute()
         {
             foreach (var command in commands)
-            {
                 command.Execute();
-            }
         }
 
         public void Undo()
         {
-            // 反向执行撤销操作
             for (int i = commands.Count - 1; i >= 0; i--)
-            {
                 commands[i].Undo();
-            }
         }
     }
 }
-

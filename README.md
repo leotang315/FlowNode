@@ -42,7 +42,7 @@ msbuild FlowNode.sln /p:Configuration=Release
 powershell -ExecutionPolicy Bypass -File scripts/run-tests.ps1
 ```
 
-脚本使用 Visual Studio 自带的 MSBuild 构建（以正确处理 .NET Framework 的 `.resx`），并通过工程内置的轻量 runner 执行用例（规避旧版 NUnit3 引擎在本机枚举 .NET 7 运行时目录时的已知崩溃），全部通过时退出码为 0。当前 **144** 个用例。
+脚本使用 Visual Studio 自带的 MSBuild 构建（以正确处理 .NET Framework 的 `.resx`），并通过工程内置的轻量 runner 执行用例（规避旧版 NUnit3 引擎在本机枚举 .NET 7 运行时目录时的已知崩溃），全部通过时退出码为 0。当前 **151** 个用例。
 
 ## 命令行执行（无 UI）
 
@@ -59,6 +59,20 @@ powershell -ExecutionPolicy Bypass -File scripts/run-tests.ps1
 
 ```powershell
 .\FlowNode.Cli\bin\Debug\net472\FlowNode.Cli.exe samples\print-hello.xml
+.\FlowNode.Cli\bin\Debug\net472\FlowNode.Cli.exe --var count=3 graph.xml
+```
+
+## 嵌入宿主（FlowNode.Core）
+
+```csharp
+using FlowNode.hosting;
+using FlowNode.app.serialization;
+
+var host = new GraphHost();
+host.RegisterAssembly(typeof(MyNodes).Assembly);
+var result = host.RunFile("graph.xml", new GraphRunOptions {
+    Variables = new Dictionary<string, object> { ["key"] = "value" }
+});
 ```
 
 ## 快捷键（摘要）
@@ -95,7 +109,7 @@ FlowNode/
 ├── FlowNode.Core/        # 逻辑层类库（node/、函数节点、XML 序列化/执行，无 WinForms）
 ├── FlowNode/             # WinForms 可视化编辑器（画布、命令、属性面板）
 ├── FlowNode.Cli/         # 命令行：加载 XML → 校验 → 执行（无 UI）
-├── FlowNode.Tests/       # 单元测试（144 用例）
+├── FlowNode.Tests/       # 单元测试（151 用例）
 ├── FlowNode.sln
 ├── scripts/run-tests.ps1
 └── docs/

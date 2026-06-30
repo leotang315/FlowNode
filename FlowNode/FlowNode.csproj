@@ -49,10 +49,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="app\command\CommandManager.cs" />
-    <Compile Include="app\command\DataObjectCommands.cs" />
-    <Compile Include="app\command\NodeDataCommands.cs" />
-    <Compile Include="app\command\NodePropertyCommands.cs" />
     <Compile Include="app\command\NodeViewCommands.cs" />
     <Compile Include="app\serialization\NodeSerializationService.cs" />
     <Compile Include="app\view\control\NodeButton.cs" />
@@ -73,7 +69,6 @@
     <Compile Include="app\view\DemoForm.Designer.cs">
       <DependentUpon>DemoForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="app\command\ICommand.cs" />
     <Compile Include="app\view\NodeEditor.cs">
       <SubType>UserControl</SubType>
     </Compile>

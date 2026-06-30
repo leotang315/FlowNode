@@ -27,5 +27,30 @@ namespace FlowNode.node
                 result = string.Empty;
             }
         }
+
+        [Function("pathCombine", true)]
+        public static void PathCombine(string a, string b, out string result)
+        {
+            result = Path.Combine(a ?? string.Empty, b ?? string.Empty);
+        }
+
+        [Function("listFiles", true)]
+        public static void ListFiles(string directory, out string result)
+        {
+            if (string.IsNullOrWhiteSpace(directory) || !Directory.Exists(directory))
+            {
+                result = string.Empty;
+                return;
+            }
+
+            try
+            {
+                result = string.Join("\n", Directory.GetFiles(directory));
+            }
+            catch
+            {
+                result = string.Empty;
+            }
+        }
     }
 }

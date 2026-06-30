@@ -5,7 +5,7 @@ using FlowNode.node;
 namespace FlowNode.app.serialization
 {
     /// <summary>
-    /// 无 UI 加载并执行节点图，供 CLI 与测试共用。
+    /// 无 UI 加载并执行节点图，供 CLI、宿主与测试共用。
     /// </summary>
     public static class GraphRunner
     {
@@ -20,6 +20,59 @@ namespace FlowNode.app.serialization
             Action<string> log = null,
             Action<string> error = null)
         {
+            return RunFile(filePath, null, log, error);
+        }
+
+        public static int RunFile(
+            string filePath,
+            GraphRunOptions options,
+            Action<string> log = null,
+            Action<string> error = null)
+        {
+            var mgr = new NodeManager();
+            return RunLoadedGraph(mgr, filePath, options, log, error);
+        }
+
+        public static GraphRunResult RunFileInto(
+            NodeManager manager,
+            string filePath,
+            GraphRunOptions options = null)
+        {
+            var result = new GraphRunResult();
+            result.ExitCode = RunLoadedGraph(
+                manager,
+                filePath,
+                options,
+                message => result.Logs.Add(message),
+                message => result.Errors.Add(message));
+            return result;
+        }
+
+        /// <summary>对已加载的图校验并执行（不再读文件）。</summary>
+        public static int Run(
+            NodeManager manager,
+            Action<string> log = null,
+            Action<string> error = null)
+        {
+            if (manager == null)
+            {
+                error?.Invoke("NodeManager 为空");
+                return ExitUsage;
+            }
+
+            if (log != null)
+                manager.Log += log;
+
+            return ExecuteManager(manager, error, log);
+        }
+
+        private static int RunLoadedGraph(
+            NodeManager manager,
+            string filePath,
+            GraphRunOptions options,
+            Action<string> log,
+            Action<string> error)
+        {
             if (string.IsNullOrWhiteSpace(filePath))
             {
                 error?.Invoke("缺少 graph.xml 路径");
@@ -33,10 +86,9 @@ namespace FlowNode.app.serialization
                 return ExitIo;
             }
 
-            var mgr = new NodeManager();
-            var serializer = new NodeGraphSerializer(mgr);
+            var serializer = new NodeGraphSerializer(manager);
             if (log != null)
-                mgr.Log += log;
+                manager.Log += log;
 
             try
             {
@@ -48,7 +100,13 @@ namespace FlowNode.app.serialization
                 return ExitIo;
             }
 
-            var errors = mgr.Validate();
+            options?.ApplyTo(manager);
+            return ExecuteManager(manager, error, log);
+        }
+
+        private static int ExecuteManager(NodeManager manager, Action<string> error, Action<string> log)
+        {
+            var errors = manager.Validate();
             if (errors.Count > 0)
             {
                 error?.Invoke("校验失败");
@@ -57,12 +115,12 @@ namespace FlowNode.app.serialization
                 return ExitValidation;
             }
 
-            foreach (var warning in mgr.ValidateWarnings())
+            foreach (var warning in manager.ValidateWarnings())
                 log?.Invoke("[警告] " + warning);
 
             try
             {
-                mgr.run();
+                manager.run();
             }
             catch (Exception ex)
             {

@@ -11,13 +11,24 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="..\FlowNode\node\**\*.cs" Link="node\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\FlowNode\app\node\*.cs" Link="app\node\%(Filename)%(Extension)" />
+    <Compile Include="..\FlowNode\app\command\ICommand.cs" Link="app\command\ICommand.cs" />
+    <Compile Include="..\FlowNode\app\command\CommandManager.cs" Link="app\command\CommandManager.cs" />
+    <Compile Include="..\FlowNode\app\command\NodeDataCommands.cs" Link="app\command\NodeDataCommands.cs" />
+    <Compile Include="..\FlowNode\app\command\NodePropertyCommands.cs" Link="app\command\NodePropertyCommands.cs" />
+    <Compile Include="..\FlowNode\app\command\DataObjectCommands.cs" Link="app\command\DataObjectCommands.cs" />
     <Compile Include="..\FlowNode\app\serialization\NodeSerializationData.cs" Link="app\serialization\NodeSerializationData.cs" />
     <Compile Include="..\FlowNode\app\serialization\NodeSnapshotHelper.cs" Link="app\serialization\NodeSnapshotHelper.cs" />
     <Compile Include="..\FlowNode\app\serialization\NodeRestoreHelper.cs" Link="app\serialization\NodeRestoreHelper.cs" />
     <Compile Include="..\FlowNode\app\serialization\NodeGraphSerializer.cs" Link="app\serialization\NodeGraphSerializer.cs" />
     <Compile Include="..\FlowNode\app\serialization\GraphRunner.cs" Link="app\serialization\GraphRunner.cs" />
+    <Compile Include="..\FlowNode\app\serialization\GraphRunOptions.cs" Link="app\serialization\GraphRunOptions.cs" />
+    <Compile Include="..\FlowNode\hosting\GraphHost.cs" Link="hosting\GraphHost.cs" />
   </ItemGroup>
 
 </Project>

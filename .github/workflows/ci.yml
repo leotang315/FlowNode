@@ -29,3 +29,6 @@ jobs:
       # runner and returns a non-zero exit code on failure (CI-friendly).
       - name: Run tests
         run: .\FlowNode.Tests\bin\Release\net472\FlowNode.Tests.exe
+
+      - name: Run CLI sample graph
+        run: .\FlowNode.Cli\bin\Release\net472\FlowNode.Cli.exe samples\print-hello.xml

@@ -40,6 +40,59 @@ namespace FlowNode.Tests
 
             Assert.AreEqual(string.Empty, node.findPin("result").data);
         }
+
+        [Test]
+        public void PathCombine_JoinsSegments()
+        {
+            var path = NodeFactory.GetNodePath().First(p => p.EndsWith("pathCombine"));
+            var node = NodeFactory.CreateNode(path);
+            node.findPin("a").data = "dir";
+            node.findPin("b").data = "file.txt";
+            node.excute(new NodeManager());
+
+            StringAssert.Contains("file.txt", node.findPin("result").data as string);
+        }
+
+        [Test]
+        public void ListFiles_ReturnsNewlineSeparatedPaths()
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), "flownode-list-" + Path.GetRandomFileName());
+            Directory.CreateDirectory(tempDir);
+            try
+            {
+                File.WriteAllText(Path.Combine(tempDir, "a.txt"), "a");
+                File.WriteAllText(Path.Combine(tempDir, "b.txt"), "b");
+
+                var path = NodeFactory.GetNodePath().First(p => p.EndsWith("listFiles"));
+                var node = NodeFactory.CreateNode(path);
+                node.findPin("directory").data = tempDir;
+                node.excute(new NodeManager());
+
+                var result = node.findPin("result").data as string;
+                StringAssert.Contains("a.txt", result);
+                StringAssert.Contains("b.txt", result);
+            }
+            finally
+            {
+                if (Directory.Exists(tempDir))
+                    Directory.Delete(tempDir, true);
+            }
+        }
+    }
+
+    [TestFixture]
+    public class HttpOperatorTests
+    {
+        [Test]
+        public void HttpGet_ReturnsEmpty_ForInvalidUrl()
+        {
+            var path = NodeFactory.GetNodePath().First(p => p.EndsWith("httpGet"));
+            var node = NodeFactory.CreateNode(path);
+            node.findPin("url").data = "not-a-valid-url";
+            node.excute(new NodeManager());
+
+            Assert.AreEqual(string.Empty, node.findPin("result").data);
+        }
     }
 
     [TestFixture]
